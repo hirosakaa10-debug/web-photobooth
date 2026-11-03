@@ -35,6 +35,10 @@
     .btn-delete { position: absolute; top: -8px; right: -8px; background-color: red; color: white; border: none; border-radius: 50%; width: 24px; height: 24px; font-size: 12px; font-weight: bold; cursor: pointer; display: flex; justify-content: center; align-items: center; padding: 0; margin: 0; box-shadow: 0 2px 4px rgba(0,0,0,0.3); }
     .btn-delete-audio { background-color: transparent; color: red; border: 2px solid red; padding: 10px 20px; margin-top: 10px; border-radius: 20px; cursor: pointer; font-family: 'Montserrat'; font-weight: bold; display: none; width: auto; }
 
+    /* DESAIN KAMERA LANGSUNG DAN BINGKAI POLAROID */
+    .camera-polaroid-frame { width: 260px; height: 300px; margin: 0 auto 15px auto; background: #222; position: relative; overflow: hidden; border: 15px solid white; border-bottom: 50px solid white; box-shadow: 0 4px 10px rgba(0,0,0,0.2); border-radius: 2px; }
+    #videoFeed { width: 100%; height: 100%; object-fit: cover; }
+    
     #canvasContainer { position: relative; width: 300px; height: 400px; margin: 0 auto 15px auto; box-shadow: 0 4px 8px rgba(0,0,0,0.2); background: white; cursor: grab; touch-action: none; }
     #canvasContainer:active { cursor: grabbing; }
     #canvasFrame { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
@@ -61,7 +65,6 @@
       <p style="margin: 5px 0 15px 0; font-size: 12px;">Share & Listen to Memories</p>
       <button onclick="gantiHalaman('page1')" class="accent" style="width: 100%; margin: 0;">📸 Take Photo</button>
     </div>
-    
     <div id="feedLoading" class="loading" style="display: block; margin-top: 20px;">Memuat galeri...</div>
     <div id="feedGrid" class="feed-container"></div>
   </div>
@@ -76,15 +79,36 @@
     <button id="btnLogin" onclick="verifikasiLogin()">Lanjut</button>
   </div>
 
-  <!-- HALAMAN 2: CAMERA & VOICE -->
+  <!-- HALAMAN 2: CAMERA & VOICE (DIPERBARUI DENGAN KAMERA LANGSUNG) -->
   <div id="page2" class="page">
-    <h3 style="color: var(--primary-color);">Ambil Momenmu</h3>
+    <h3 style="color: var(--primary-color); margin-bottom: 5px;">Ambil Momenmu</h3>
+    <p style="font-size: 11px; margin-top: 0; margin-bottom: 15px;">Posisikan senyummu di dalam bingkai polaroid</p>
     
-    <label for="kameraNatif" class="btn-native">📸 Jepret Foto (<span id="countFoto">0</span>/5)</label>
-    <input type="file" id="kameraNatif" accept="image/*" capture="user" onchange="prosesFotoNatif(event)">
+    <!-- Area Web Camera Polaroid -->
+    <div class="camera-polaroid-frame">
+      <video id="videoFeed" autoplay playsinline></video>
+      <canvas id="captureCanvas" width="260" height="300" style="display:none;"></canvas>
+    </div>
+    
+    <!-- Tombol Kontrol Kamera -->
+    <div style="display: flex; justify-content: center; gap: 10px; margin-bottom: 10px; width: 100%; max-width: 330px; margin: 0 auto;">
+      <button id="btnJepretWeb" onclick="jepretKameraWeb()" class="accent" style="flex: 2; margin: 0;">📸 Jepret (<span id="countFoto">0</span>/5)</button>
+      <button onclick="gantiKamera()" style="flex: 1; margin: 0; background: #666; font-size: 13px;">🔄 Putar</button>
+    </div>
+
+    <!-- Fallback/Cadangan Jika Browser Memblokir Akses Kamera Website -->
+    <div id="fallbackKameraUpload" style="display: none; margin-top: 15px;">
+      <label for="kameraNatif" class="btn-native" style="background-color: #444; width: 85%; font-size: 12px; padding: 10px;">
+        ⚠️ Gunakan Kamera iPhone Bawaan (Jika Error)
+      </label>
+      <input type="file" id="kameraNatif" accept="image/*" capture="user" onchange="prosesFotoNatif(event)">
+    </div>
+
+    <!-- Preview Hasil Jepretan -->
     <div id="previewArea" class="photo-grid"></div>
     <hr style="border: 1px solid #ddd; margin: 20px 0;">
 
+    <!-- Suara -->
     <h3>Tinggalkan Pesan Suara</h3>
     <p style="font-size: 12px; margin-top: 0;">Maksimal 30 Detik</p>
     <button id="btnRekam" onclick="toggleRekam()">🎙️ Mulai Rekam</button>
@@ -100,6 +124,7 @@
       <button class="btn-delete-audio" id="btnHapusAudio" onclick="hapusAudio()">🗑️ Hapus Rekaman</button>
     </div>
     <hr style="border: 1px solid #ddd; margin: 20px 0;">
+    
     <button id="btnSimpanDrive" onclick="simpanKeDrive()">💾 Save (Simpan Semua)</button>
     <div id="loadingSave" class="loading">Mengirim ke server... Mohon tunggu.</div>
   </div>
@@ -115,11 +140,14 @@
   <div id="page4" class="page">
     <div style="text-align: left;"><button onclick="kembaliPilihFoto()" class="btn-back">← Kembali Pilih Foto</button></div>
     
-    <h3 style="color: var(--primary-color); margin-top: 0;">Sesuaikan Foto</h3>
-    <p style="font-size: 12px; margin-top: -10px;">Cubit dan geser foto dengan bebas</p>
+    <h3 style="color: var(--primary-color); margin-top: 0;">Sesuaikan Warna</h3>
+    <p style="font-size: 12px; margin-top: -10px;">Foto Anda sudah otomatis di posisi yang pas!</p>
     
     <div id="canvasContainer"><canvas id="canvasFrame" width="300" height="400"></canvas></div>
-    <div class="zoom-controls">
+    
+    <!-- Tombol Zoom dihilangkan secara visual karena sudah tidak terlalu dibutuhkan, 
+         tetapi fungsinya tetap ada jika tamu secara tidak sengaja mencubit layar -->
+    <div class="zoom-controls" style="display: none;">
       <button class="btn-zoom" onclick="aturZoom(-0.1)">-</button>
       <button class="btn-zoom" onclick="aturZoom(0.1)">+</button>
     </div>
@@ -149,6 +177,10 @@
     let namaUser = "", kuponUser = "", arrayFoto = [], audioBase64 = null, fotoTerpilih = null, filterSaatIni = "normal";
     let savedAudioUrl = ""; 
     
+    // Variabel Kamera Baru
+    let videoStream = null;
+    let facingMode = "user"; // "user" untuk kamera depan (selfie), "environment" untuk belakang
+    
     let mediaRecorder, audioChunks = [], timeoutRekaman;
     let imgObj = new Image(), imgScale = 1, imgX = 0, imgY = 0, isDragging = false, lastPinchDistance = null, lastPointX = null, lastPointY = null;
     const FRAME_X = 20, FRAME_Y = 20, FRAME_WIDTH = 260, FRAME_HEIGHT = 300;
@@ -167,12 +199,8 @@
     let currentPlayingBtn = null;
 
     function initAudioContext() {
-      if (!audioCtx) {
-        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-      }
-      if (audioCtx.state === 'suspended') {
-        audioCtx.resume();
-      }
+      if (!audioCtx) { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); }
+      if (audioCtx.state === 'suspended') { audioCtx.resume(); }
     }
 
     function muatFeeds() {
@@ -184,112 +212,137 @@
       .then(res => res.json())
       .then(data => {
         document.getElementById('feedLoading').style.display = 'none';
-        const grid = document.getElementById('feedGrid');
-        grid.innerHTML = "";
-        
+        const grid = document.getElementById('feedGrid'); grid.innerHTML = "";
         if(data.status === "success" && data.data.length > 0) {
           data.data.forEach(item => {
             const card = document.createElement('div'); card.className = 'feed-card';
             const img = document.createElement('img'); img.src = item.imageUrl; img.loading = "lazy";
             const overlay = document.createElement('div'); overlay.className = 'feed-overlay';
             const nameObj = document.createElement('div'); nameObj.className = 'feed-name'; nameObj.innerText = item.nama;
-            
             overlay.appendChild(nameObj);
 
             if(item.audioUrl) {
-              const btnAudio = document.createElement('div');
-              btnAudio.className = 'btn-play';
-              btnAudio.innerHTML = '▶';
-              // Kirim kode Base64 mentah ke fungsi pemutar
+              const btnAudio = document.createElement('div'); btnAudio.className = 'btn-play'; btnAudio.innerHTML = '▶';
               btnAudio.onclick = () => mainkanAudioFeed(item.audioUrl, btnAudio);
               overlay.appendChild(btnAudio);
             }
-
             card.appendChild(img); card.appendChild(overlay); grid.appendChild(card);
           });
         } else {
           grid.innerHTML = "<p style='grid-column: span 2; text-align: center; color: #888;'>Belum ada foto. Jadilah yang pertama!</p>";
         }
       })
-      .catch(err => {
-        document.getElementById('feedLoading').innerText = "Gagal memuat galeri.";
-      });
+      .catch(err => { document.getElementById('feedLoading').innerText = "Gagal memuat galeri."; });
     }
 
     function mainkanAudioFeed(base64Data, btnElement) {
-      // 1. Inisialisasi Audio Context tepat pada saat tamu menyentuh tombol (Syarat wajib Apple)
       initAudioContext(); 
-      
-      // Jika menekan tombol yang sedang berjalan (Pause)
       if (currentPlayingBtn === btnElement && currentAudioSource) {
-        currentAudioSource.stop();
-        currentAudioSource = null;
-        btnElement.innerHTML = '▶';
-        currentPlayingBtn = null;
-        return;
+        currentAudioSource.stop(); currentAudioSource = null; btnElement.innerHTML = '▶'; currentPlayingBtn = null; return;
       }
-
-      // Hentikan suara lain jika ada yang masih jalan
       if (currentAudioSource) {
-        currentAudioSource.stop();
-        if (currentPlayingBtn) currentPlayingBtn.innerHTML = '▶';
-        currentAudioSource = null;
+        currentAudioSource.stop(); if (currentPlayingBtn) currentPlayingBtn.innerHTML = '▶'; currentAudioSource = null;
       }
 
-      btnElement.innerHTML = '⏳'; // Ikon jam pasir saat sistem membongkar file audio
-      currentPlayingBtn = btnElement;
+      btnElement.innerHTML = '⏳'; currentPlayingBtn = btnElement;
 
       try {
-        // Bersihkan struktur teks Base64
         let base64String = base64Data;
-        if (base64String.indexOf(',') !== -1) {
-          base64String = base64String.split(',')[1];
-        }
+        if (base64String.indexOf(',') !== -1) { base64String = base64String.split(',')[1]; }
+        const binaryString = window.atob(base64String); const len = binaryString.length; const bytes = new Uint8Array(len);
+        for (let i = 0; i < len; i++) { bytes[i] = binaryString.charCodeAt(i); }
 
-        // 2. Ubah data teks menjadi Array Buffer (Format mentah)
-        const binaryString = window.atob(base64String);
-        const len = binaryString.length;
-        const bytes = new Uint8Array(len);
-        for (let i = 0; i < len; i++) {
-          bytes[i] = binaryString.charCodeAt(i);
-        }
-
-        // 3. Decoding & Play secara native menggunakan sistem Apple
         audioCtx.decodeAudioData(bytes.buffer, function(buffer) {
-          const source = audioCtx.createBufferSource();
-          source.buffer = buffer;
-          source.connect(audioCtx.destination);
-          source.start(0); // Mulai mainkan
-          
-          currentAudioSource = source;
-          btnElement.innerHTML = '⏸';
-          
-          // Jika lagu selesai
-          source.onended = () => {
-            btnElement.innerHTML = '▶';
-            if (currentPlayingBtn === btnElement) {
-               currentAudioSource = null;
-               currentPlayingBtn = null;
-            }
-          };
-        }, function(e) {
-          console.error("Format tidak didukung iOS:", e);
-          alert("Gagal memutar. Format suara tidak terbaca.");
-          btnElement.innerHTML = '▶';
-        });
+          const source = audioCtx.createBufferSource(); source.buffer = buffer; source.connect(audioCtx.destination); source.start(0); 
+          currentAudioSource = source; btnElement.innerHTML = '⏸';
+          source.onended = () => { btnElement.innerHTML = '▶'; if (currentPlayingBtn === btnElement) { currentAudioSource = null; currentPlayingBtn = null; } };
+        }, function(e) { console.error(e); alert("Gagal memutar. Format suara tidak terbaca."); btnElement.innerHTML = '▶'; });
+      } catch (err) { console.error(err); btnElement.innerHTML = '▶'; }
+    }
+
+    // =========================================================================
+    // LOGIKA KAMERA IN-BROWSER (Baru)
+    // =========================================================================
+    async function mulaiKamera() {
+      if (videoStream) { videoStream.getTracks().forEach(track => track.stop()); }
+      try {
+        videoStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: facingMode } });
+        const video = document.getElementById('videoFeed');
+        video.srcObject = videoStream;
+        // Berikan efek cermin (mirror) jika pakai kamera depan agar pergerakan tamu tidak membingungkan
+        video.style.transform = facingMode === "user" ? "scaleX(-1)" : "scaleX(1)";
+        document.getElementById('fallbackKameraUpload').style.display = "none";
       } catch (err) {
-        console.error("Gagal convert:", err);
-        btnElement.innerHTML = '▶';
+        console.error("Kamera diblokir/error:", err);
+        // Jika ditolak browser, tampilkan tombol upload manual sebagai cadangan
+        document.getElementById('fallbackKameraUpload').style.display = "block";
       }
+    }
+
+    function gantiKamera() {
+      facingMode = facingMode === "user" ? "environment" : "user";
+      mulaiKamera();
+    }
+
+    function matikanKamera() {
+      if (videoStream) {
+        videoStream.getTracks().forEach(track => track.stop());
+        videoStream = null;
+      }
+    }
+
+    function jepretKameraWeb() {
+      if(arrayFoto.length >= 5) { alert("Maksimal 5 foto!"); return; }
+      const video = document.getElementById('videoFeed');
+      if (!video.videoWidth) return; // Pastikan video sudah memuat gambar
+      
+      const canvas = document.getElementById('captureCanvas');
+      const ctx = canvas.getContext('2d');
+      
+      const targetWidth = canvas.width;    // 260
+      const targetHeight = canvas.height;  // 300
+      
+      const videoRatio = video.videoWidth / video.videoHeight;
+      const targetRatio = targetWidth / targetHeight;
+      
+      let drawWidth, drawHeight, startX, startY;
+      
+      // Menghitung crop otomatis agar gambar video memotong sempurna sesuai bingkai
+      if (videoRatio > targetRatio) {
+        drawHeight = targetHeight;
+        drawWidth = video.videoWidth * (targetHeight / video.videoHeight);
+        startX = (targetWidth - drawWidth) / 2;
+        startY = 0;
+      } else {
+        drawWidth = targetWidth;
+        drawHeight = video.videoHeight * (targetWidth / video.videoWidth);
+        startX = 0;
+        startY = (targetHeight - drawHeight) / 2;
+      }
+      
+      ctx.save();
+      // Balikkan gambar saat disimpan jika menggunakan kamera depan (agar hasil tidak terbalik)
+      if (facingMode === "user") {
+        ctx.translate(targetWidth, 0);
+        ctx.scale(-1, 1);
+      }
+      
+      ctx.fillStyle = "white"; ctx.fillRect(0,0,targetWidth,targetHeight);
+      ctx.drawImage(video, startX, startY, drawWidth, drawHeight);
+      ctx.restore();
+      
+      arrayFoto.push(canvas.toDataURL('image/jpeg', 0.9));
+      renderPreview();
     }
     // =========================================================================
 
-    // --- ALUR FOTO ---
     function verifikasiLogin() {
       namaUser = document.getElementById('inputNama').value.trim();
       kuponUser = document.getElementById('inputKupon').value.trim();
       if(namaUser === "" || kuponUser === "") { alert("Nama dan Nomor Kupon WAJIB diisi keduanya!"); return; }
       gantiHalaman('page2');
+      // Menyalakan kamera otomatis saat tamu masuk ke halaman 2
+      mulaiKamera(); 
     }
 
     function renderPreview() {
@@ -304,6 +357,7 @@
       });
     }
 
+    // Fungsi ini dipakai HANYA JIKA kamera browser bermasalah dan tamu menekan tombol Fallback
     function prosesFotoNatif(event) {
       if(arrayFoto.length >= 5) { alert("Maksimal 5 foto!"); return; }
       const file = event.target.files[0]; if(!file) return;
@@ -321,48 +375,33 @@
       reader.readAsDataURL(file);
     }
 
+    // --- LOGIKA REKAM SUARA ---
     async function toggleRekam() {
       const btn = document.getElementById('btnRekam');
       if (btn.innerText.includes("Mulai") || btn.innerText.includes("Ulang")) {
         try {
           const stream = await navigator.mediaDevices.getUserMedia({ audio: true }); 
-          
           let options = { mimeType: 'audio/webm' };
-          if (MediaRecorder.isTypeSupported('audio/mp4')) {
-            options = { mimeType: 'audio/mp4' };
-          }
-          mediaRecorder = new MediaRecorder(stream, options); 
-          audioChunks = [];
+          if (MediaRecorder.isTypeSupported('audio/mp4')) { options = { mimeType: 'audio/mp4' }; }
+          mediaRecorder = new MediaRecorder(stream, options); audioChunks = [];
           
           mediaRecorder.ondataavailable = e => { if (e.data.size > 0) audioChunks.push(e.data); };
           mediaRecorder.onstop = () => {
             const audioBlob = new Blob(audioChunks, { type: mediaRecorder.mimeType }); 
             const reader = new FileReader();
             reader.onloadend = () => {
-              audioBase64 = reader.result; 
-              const playback = document.getElementById('audioPlayback');
-              playback.src = audioBase64;
-              playback.load(); 
-              
-              document.getElementById('audioContainer').style.display = 'flex'; 
-              document.getElementById('btnHapusAudio').style.display = 'block';
+              audioBase64 = reader.result; const playback = document.getElementById('audioPlayback');
+              playback.src = audioBase64; playback.load(); 
+              document.getElementById('audioContainer').style.display = 'flex'; document.getElementById('btnHapusAudio').style.display = 'block';
             };
-            reader.readAsDataURL(audioBlob);
-            stream.getTracks().forEach(track => track.stop());
+            reader.readAsDataURL(audioBlob); stream.getTracks().forEach(track => track.stop());
           };
 
-          mediaRecorder.start(); 
-          btn.innerText = "🛑 Hentikan Rekaman"; 
-          btn.classList.add('accent');
+          mediaRecorder.start(); btn.innerText = "🛑 Hentikan Rekaman"; btn.classList.add('accent');
           timeoutRekaman = setTimeout(() => { if(mediaRecorder && mediaRecorder.state === "recording") toggleRekam(); }, 30000);
-        } catch (err) { 
-          btn.style.display = "none"; document.getElementById('areaFallback').style.display = "block"; 
-        }
+        } catch (err) { btn.style.display = "none"; document.getElementById('areaFallback').style.display = "block"; }
       } else { 
-        mediaRecorder.stop(); 
-        clearTimeout(timeoutRekaman); 
-        btn.innerText = "🎙️ Rekam Ulang"; 
-        btn.classList.remove('accent'); 
+        mediaRecorder.stop(); clearTimeout(timeoutRekaman); btn.innerText = "🎙️ Rekam Ulang"; btn.classList.remove('accent'); 
       }
     }
 
@@ -370,32 +409,23 @@
       const file = event.target.files[0]; if(!file) return;
       const reader = new FileReader();
       reader.onload = function(e) {
-        audioBase64 = e.target.result; 
-        const playback = document.getElementById('audioPlayback');
-        playback.src = audioBase64;
-        playback.load();
-        
-        document.getElementById('audioContainer').style.display = 'flex'; 
-        document.getElementById('btnHapusAudio').style.display = 'block';
-        document.querySelector('.iphone-warning').style.display = 'none'; 
-        event.target.value = ''; 
+        audioBase64 = e.target.result; const playback = document.getElementById('audioPlayback');
+        playback.src = audioBase64; playback.load();
+        document.getElementById('audioContainer').style.display = 'flex'; document.getElementById('btnHapusAudio').style.display = 'block';
+        document.querySelector('.iphone-warning').style.display = 'none'; event.target.value = ''; 
       }
       reader.readAsDataURL(file);
     }
 
     function hapusAudio() {
       if(confirm("Hapus rekaman?")) {
-        audioBase64 = null; 
-        const playback = document.getElementById('audioPlayback');
-        playback.pause(); playback.src = "";
-        
-        document.getElementById('audioContainer').style.display = 'none'; 
-        document.getElementById('btnHapusAudio').style.display = 'none';
-        document.getElementById('btnRekam').innerText = "🎙️ Mulai Rekam"; 
-        document.getElementById('btnRekam').classList.remove('accent');
+        audioBase64 = null; const playback = document.getElementById('audioPlayback'); playback.pause(); playback.src = "";
+        document.getElementById('audioContainer').style.display = 'none'; document.getElementById('btnHapusAudio').style.display = 'none';
+        document.getElementById('btnRekam').innerText = "🎙️ Mulai Rekam"; document.getElementById('btnRekam').classList.remove('accent');
       }
     }
 
+    // --- PENYIMPANAN KE GOOGLE ---
     function simpanKeDrive() {
       if(arrayFoto.length === 0 && !audioBase64) { alert("Ambil minimal 1 foto atau suara."); return; }
       
@@ -427,7 +457,10 @@
     }
 
     function siapkanHalamanPrint() {
+      // Wajib matikan kamera sebelum pindah halaman agar baterai HP tamu tidak boros!
+      matikanKamera(); 
       gantiHalaman('page3');
+      
       const grid = document.getElementById('selectionGrid'); grid.innerHTML = "";
       arrayFoto.forEach((src) => {
         const img = document.createElement('img'); img.src = src;
@@ -439,15 +472,18 @@
     }
 
     function lanjutKeEdit() { if(!fotoTerpilih) { alert("Pilih 1 foto!"); return; } gantiHalaman('page4'); terapkanFilter('normal'); inisialisasiEditFoto(); }
+    
     function kembaliPilihFoto() { filterSaatIni = "normal"; siapkanHalamanPrint(); }
 
     function inisialisasiEditFoto() {
       imgObj.onload = () => {
+        // Karena foto sudah dipotong 260x300 sejak awal, skalanya PASTI 1.0 (sempurna di tengah)
         const scaleX = FRAME_WIDTH / imgObj.width; const scaleY = FRAME_HEIGHT / imgObj.height; imgScale = Math.max(scaleX, scaleY); 
         imgX = FRAME_X + (FRAME_WIDTH - (imgObj.width * imgScale)) / 2; imgY = FRAME_Y + (FRAME_HEIGHT - (imgObj.height * imgScale)) / 2;
         gambarDiCanvas();
       }; imgObj.src = fotoTerpilih;
     }
+    
     function aturZoom(delta) { imgScale += delta; if (imgScale < 0.2) imgScale = 0.2; gambarDiCanvas(); }
 
     function gambarDiCanvas() {
@@ -491,6 +527,7 @@
       gambarDiCanvas();
     }
 
+    // Fungsi interaksi sentuh / geser dibiarkan hidup jika suatu waktu tamu tidak sengaja mencubit layar
     const canvasContainer = document.getElementById('canvasContainer');
     function getTouchPos(e, index) { const rect = document.getElementById('canvasFrame').getBoundingClientRect(); const touch = e.touches ? e.touches[index] : e; return { x: touch.clientX - rect.left, y: touch.clientY - rect.top }; }
     function startDrag(e) {
