@@ -160,10 +160,20 @@
     }
 
     // =========================================================================
-    // LOGIKA PEMUTAR AUDIO BARU (KHUSUS IOS/SAFARI)
+    // LOGIKA PEMUTAR AUDIO WEB AUDIO API (ANTI BLOKIR SAFARI)
     // =========================================================================
-    let currentAudioObj = null;
+    let audioCtx = null;
+    let currentAudioSource = null;
     let currentPlayingBtn = null;
+
+    function initAudioContext() {
+      if (!audioCtx) {
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      }
+      if (audioCtx.state === 'suspended') {
+        audioCtx.resume();
+      }
+    }
 
     function muatFeeds() {
       fetch(API_URL, {
@@ -187,28 +197,11 @@
             overlay.appendChild(nameObj);
 
             if(item.audioUrl) {
-              let playableUrl = item.audioUrl;
-              
-              // 1. Ubah Base64 jadi Virtual File (Blob URL) agar dikenali Apple sebagai file asli
-              if (playableUrl.startsWith('data:')) {
-                try {
-                  const parts = playableUrl.split(',');
-                  const contentType = parts[0].split(':')[1].split(';')[0];
-                  const byteCharacters = atob(parts[1]);
-                  const byteArray = new Uint8Array(byteCharacters.length);
-                  for (let i = 0; i < byteCharacters.length; i++) {
-                    byteArray[i] = byteCharacters.charCodeAt(i);
-                  }
-                  playableUrl = URL.createObjectURL(new Blob([byteArray], {type: contentType}));
-                } catch(e) {
-                  console.error("Gagal convert Blob:", e);
-                }
-              }
-
               const btnAudio = document.createElement('div');
               btnAudio.className = 'btn-play';
               btnAudio.innerHTML = '▶';
-              btnAudio.onclick = () => mainkanAudioFeed(playableUrl, btnAudio);
+              // Kirim kode Base64 mentah ke fungsi pemutar
+              btnAudio.onclick = () => mainkanAudioFeed(item.audioUrl, btnAudio);
               overlay.appendChild(btnAudio);
             }
 
@@ -223,41 +216,71 @@
       });
     }
 
-    function mainkanAudioFeed(url, btnElement) {
-      // Jika menekan tombol yang sedang berjalan = Pause
-      if (currentPlayingBtn === btnElement && currentAudioObj && !currentAudioObj.paused) {
-        currentAudioObj.pause();
+    function mainkanAudioFeed(base64Data, btnElement) {
+      // 1. Inisialisasi Audio Context tepat pada saat tamu menyentuh tombol (Syarat wajib Apple)
+      initAudioContext(); 
+      
+      // Jika menekan tombol yang sedang berjalan (Pause)
+      if (currentPlayingBtn === btnElement && currentAudioSource) {
+        currentAudioSource.stop();
+        currentAudioSource = null;
         btnElement.innerHTML = '▶';
+        currentPlayingBtn = null;
         return;
       }
 
-      // Hentikan suara lain jika ada yang sedang berjalan
-      if (currentAudioObj) {
-        currentAudioObj.pause();
+      // Hentikan suara lain jika ada yang masih jalan
+      if (currentAudioSource) {
+        currentAudioSource.stop();
         if (currentPlayingBtn) currentPlayingBtn.innerHTML = '▶';
+        currentAudioSource = null;
       }
 
-      // 2. Gunakan metode pembuatan Audio baru secara on-the-fly (Lolos deteksi bot Safari)
-      currentAudioObj = new Audio(url);
+      btnElement.innerHTML = '⏳'; // Ikon jam pasir saat sistem membongkar file audio
       currentPlayingBtn = btnElement;
-      
-      let playPromise = currentAudioObj.play();
-      if (playPromise !== undefined) {
-        playPromise.then(_ => {
+
+      try {
+        // Bersihkan struktur teks Base64
+        let base64String = base64Data;
+        if (base64String.indexOf(',') !== -1) {
+          base64String = base64String.split(',')[1];
+        }
+
+        // 2. Ubah data teks menjadi Array Buffer (Format mentah)
+        const binaryString = window.atob(base64String);
+        const len = binaryString.length;
+        const bytes = new Uint8Array(len);
+        for (let i = 0; i < len; i++) {
+          bytes[i] = binaryString.charCodeAt(i);
+        }
+
+        // 3. Decoding & Play secara native menggunakan sistem Apple
+        audioCtx.decodeAudioData(bytes.buffer, function(buffer) {
+          const source = audioCtx.createBufferSource();
+          source.buffer = buffer;
+          source.connect(audioCtx.destination);
+          source.start(0); // Mulai mainkan
+          
+          currentAudioSource = source;
           btnElement.innerHTML = '⏸';
-        }).catch(error => {
-          console.error("Diblokir iOS:", error);
-          alert("Safari memblokir pemutaran otomatis. Coba ketuk Play satu kali lagi.");
+          
+          // Jika lagu selesai
+          source.onended = () => {
+            btnElement.innerHTML = '▶';
+            if (currentPlayingBtn === btnElement) {
+               currentAudioSource = null;
+               currentPlayingBtn = null;
+            }
+          };
+        }, function(e) {
+          console.error("Format tidak didukung iOS:", e);
+          alert("Gagal memutar. Format suara tidak terbaca.");
           btnElement.innerHTML = '▶';
-          currentAudioObj = null;
         });
+      } catch (err) {
+        console.error("Gagal convert:", err);
+        btnElement.innerHTML = '▶';
       }
-      
-      currentAudioObj.onended = () => { 
-        btnElement.innerHTML = '▶'; 
-        currentAudioObj = null;
-        currentPlayingBtn = null;
-      };
     }
     // =========================================================================
 
@@ -319,7 +342,7 @@
               audioBase64 = reader.result; 
               const playback = document.getElementById('audioPlayback');
               playback.src = audioBase64;
-              playback.load(); // Memaksa Safari membaca ulang
+              playback.load(); 
               
               document.getElementById('audioContainer').style.display = 'flex'; 
               document.getElementById('btnHapusAudio').style.display = 'block';
