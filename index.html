@@ -13,32 +13,11 @@
       --text-color: #333333;
     }
 
-    body {
-      font-family: 'Montserrat', sans-serif;
-      background-color: var(--bg-color);
-      color: var(--text-color);
-      margin: 0; padding: 20px;
-      text-align: center;
-      display: flex; flex-direction: column; align-items: center;
-      overscroll-behavior-y: contain; 
-    }
-
-    .page { display: none; width: 100%; max-width: 400px; } 
+    body { font-family: 'Montserrat', sans-serif; background-color: var(--bg-color); color: var(--text-color); margin: 0; padding: 20px; text-align: center; display: flex; flex-direction: column; align-items: center; overscroll-behavior-y: contain; }
+    .page { display: none; width: 100%; max-width: 500px; } 
     .active { display: block; }
-
-    input[type="text"] {
-      width: 90%; padding: 15px; margin: 10px 0;
-      border: 2px solid var(--primary-color);
-      border-radius: 10px; font-family: 'Montserrat'; font-weight: 700;
-    }
-    
-    button {
-      background-color: var(--primary-color);
-      color: white; border: none; padding: 15px 30px;
-      margin: 10px 5px; border-radius: 25px;
-      font-family: 'Montserrat'; font-weight: 700; cursor: pointer;
-      width: 95%; box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-    }
+    input[type="text"] { width: 90%; padding: 15px; margin: 10px 0; border: 2px solid var(--primary-color); border-radius: 10px; font-family: 'Montserrat'; font-weight: 700; }
+    button { background-color: var(--primary-color); color: white; border: none; padding: 15px 30px; margin: 10px 5px; border-radius: 25px; font-family: 'Montserrat'; font-weight: 700; cursor: pointer; width: 95%; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
     button:active { transform: scale(0.98); }
     button.accent { background-color: var(--accent-color); }
     button.btn-back { background-color: transparent; color: var(--primary-color); border: 2px solid var(--primary-color); padding: 10px 20px; margin-bottom: 20px; width: auto; font-size: 14px; }
@@ -53,33 +32,54 @@
     .photo-grid { display: flex; gap: 10px; overflow-x: auto; margin-top: 15px; margin-bottom: 15px; padding-bottom: 10px; }
     .photo-wrapper { position: relative; display: inline-block; }
     .photo-wrapper img { width: 60px; height: 80px; object-fit: cover; border-radius: 5px; border: 2px solid transparent; }
-    .btn-delete { position: absolute; top: -8px; right: -8px; background-color: red; color: white; border: none; border-radius: 50%; width: 24px; height: 24px; font-size: 12px; font-weight: bold; cursor: pointer; display: flex; justify-content: center; align-items: center; padding: 0; margin: 0; }
+    .btn-delete { position: absolute; top: -8px; right: -8px; background-color: red; color: white; border: none; border-radius: 50%; width: 24px; height: 24px; font-size: 12px; font-weight: bold; cursor: pointer; display: flex; justify-content: center; align-items: center; padding: 0; margin: 0; box-shadow: 0 2px 4px rgba(0,0,0,0.3); }
     .btn-delete-audio { background-color: transparent; color: red; border: 2px solid red; padding: 10px 20px; margin-top: 10px; border-radius: 20px; cursor: pointer; font-family: 'Montserrat'; font-weight: bold; display: none; width: auto; }
 
     #canvasContainer { position: relative; width: 300px; height: 400px; margin: 0 auto 15px auto; box-shadow: 0 4px 8px rgba(0,0,0,0.2); background: white; cursor: grab; touch-action: none; }
     #canvasContainer:active { cursor: grabbing; }
     #canvasFrame { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
-    
     .zoom-controls { display: flex; justify-content: center; gap: 10px; margin-bottom: 15px; }
     .btn-zoom { background-color: #ddd; color: #333; width: 40px; height: 40px; padding: 0; margin: 0; font-size: 20px; font-weight: bold; border-radius: 50%; }
     .loading { display: none; font-weight: bold; color: var(--accent-color); margin-top: 10px;}
     .iphone-warning { font-size: 11px; color: #d9534f; background: #fdf2f2; border: 1px solid #f5c6cb; padding: 10px; border-radius: 8px; margin-top: 10px; text-align: left; line-height: 1.4; }
+
+    /* DESAIN GALERI LIVE FEEDS */
+    .feed-container { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; padding-top: 10px; }
+    .feed-card { position: relative; border-radius: 12px; overflow: hidden; background: #222; aspect-ratio: 3/4; box-shadow: 0 4px 10px rgba(0,0,0,0.15); }
+    .feed-card img { width: 100%; height: 100%; object-fit: cover; }
+    .feed-overlay { position: absolute; bottom: 0; left: 0; right: 0; background: linear-gradient(to top, rgba(0,0,0,0.85), transparent); padding: 25px 12px 12px 12px; display: flex; justify-content: space-between; align-items: flex-end; }
+    .feed-name { color: white; font-weight: bold; font-size: 13px; text-shadow: 1px 1px 3px rgba(0,0,0,0.8); text-align: left; }
+    .btn-play { background: rgba(255,255,255,0.25); border: 1px solid rgba(255,255,255,0.5); backdrop-filter: blur(4px); border-radius: 50%; width: 32px; height: 32px; display: flex; justify-content: center; align-items: center; cursor: pointer; color: white; font-size: 14px; }
   </style>
 </head>
-<body>
+<body onload="muatFeeds()">
 
-  <!-- HALAMAN 1 -->
-  <div id="page1" class="page active">
+  <!-- HALAMAN 0: LIVE FEEDS GALERI -->
+  <div id="page0" class="page active" style="padding: 0;">
+    <div style="position: sticky; top: 0; background: var(--bg-color); z-index: 10; padding: 15px 0; border-bottom: 1px solid #ddd;">
+      <h2 style="color: var(--primary-color); font-weight: 900; margin: 0;">Live Feeds</h2>
+      <p style="margin: 5px 0 15px 0; font-size: 12px;">Share & Listen to Memories</p>
+      <button onclick="gantiHalaman('page1')" class="accent" style="width: 100%; margin: 0;">📸 Take Photo</button>
+    </div>
+    
+    <div id="feedLoading" class="loading" style="display: block; margin-top: 20px;">Memuat galeri...</div>
+    <div id="feedGrid" class="feed-container"></div>
+  </div>
+
+  <!-- HALAMAN 1: LOGIN -->
+  <div id="page1" class="page">
+    <div style="text-align: left;"><button onclick="gantiHalaman('page0')" class="btn-back">← Kembali ke Feeds</button></div>
     <h2 style="color: var(--primary-color); font-weight: 900;">Virtual Photobooth</h2>
     <p>Silakan isi data diri Anda</p>
     <input type="text" id="inputNama" placeholder="Nama Anda (Cth: Budi)">
     <input type="text" id="inputKupon" placeholder="Nomor Kupon (Cth: 001)">
-    <button id="btnLogin" onclick="verifikasiLogin()">OK</button>
+    <button id="btnLogin" onclick="verifikasiLogin()">Lanjut</button>
   </div>
 
-  <!-- HALAMAN 2 -->
+  <!-- HALAMAN 2: CAMERA & VOICE -->
   <div id="page2" class="page">
     <h3 style="color: var(--primary-color);">Ambil Momenmu</h3>
+    
     <label for="kameraNatif" class="btn-native">📸 Jepret Foto (<span id="countFoto">0</span>/5)</label>
     <input type="file" id="kameraNatif" accept="image/*" capture="user" onchange="prosesFotoNatif(event)">
     <div id="previewArea" class="photo-grid"></div>
@@ -88,31 +88,33 @@
     <h3>Tinggalkan Pesan Suara</h3>
     <p style="font-size: 12px; margin-top: 0;">Maksimal 30 Detik</p>
     <button id="btnRekam" onclick="toggleRekam()">🎙️ Mulai Rekam</button>
+    
     <div id="areaFallback" style="display: none; margin-top: 10px;">
       <div class="iphone-warning">Ketuk tombol di bawah. Jika layar kamera terbuka, abaikan saja karena sistem <b>hanya akan menyimpan suaranya</b>.</div>
       <label for="audioNatif" class="btn-native" style="background-color: var(--primary-color);">🎙️ Buka Perekam iPhone</label>
       <input type="file" id="audioNatif" accept="audio/*" capture="microphone" onchange="prosesAudioNatif(event)">
     </div>
+
     <div id="audioContainer" style="display: none; align-items: center; flex-direction: column; margin-top: 10px;">
       <audio id="audioPlayback" controls style="width:100%;"></audio>
       <button class="btn-delete-audio" id="btnHapusAudio" onclick="hapusAudio()">🗑️ Hapus Rekaman</button>
     </div>
     <hr style="border: 1px solid #ddd; margin: 20px 0;">
-    
     <button id="btnSimpanDrive" onclick="simpanKeDrive()">💾 Save (Simpan Semua)</button>
-    <div id="loadingSave" class="loading">Menyimpan ke sistem... Mohon tunggu.</div>
+    <div id="loadingSave" class="loading">Mengirim ke server... Mohon tunggu.</div>
   </div>
 
-  <!-- HALAMAN 3 -->
+  <!-- HALAMAN 3: PILIH FOTO UNTUK DIPRINT -->
   <div id="page3" class="page">
-    <h3 style="color: var(--primary-color);">Pilih 1 Foto Untuk Dicetak</h3>
+    <h3 style="color: var(--primary-color);">Pilih 1 Foto Untuk Dipublikasi</h3>
     <div id="selectionGrid" style="display: flex; flex-wrap: wrap; gap: 10px; justify-content: center;"></div>
     <button id="btnLanjutEdit" onclick="lanjutKeEdit()" class="accent" style="margin-top: 20px;">Lanjut Edit</button>
   </div>
 
-  <!-- HALAMAN 4 -->
+  <!-- HALAMAN 4: ADJUST & FILTER -->
   <div id="page4" class="page">
     <div style="text-align: left;"><button onclick="kembaliPilihFoto()" class="btn-back">← Kembali Pilih Foto</button></div>
+    
     <h3 style="color: var(--primary-color); margin-top: 0;">Sesuaikan Foto</h3>
     <p style="font-size: 12px; margin-top: -10px;">Cubit dan geser foto dengan bebas</p>
     
@@ -121,28 +123,27 @@
       <button class="btn-zoom" onclick="aturZoom(-0.1)">-</button>
       <button class="btn-zoom" onclick="aturZoom(0.1)">+</button>
     </div>
+
     <div>
       <button id="btnPolaroid" class="btn-filter" onclick="terapkanFilter('polaroid')">Filter Polaroid</button>
       <button id="btnDigicam" class="btn-filter" onclick="terapkanFilter('digicam')">Filter Digicam</button>
       <button id="btnNormal" class="btn-filter active-filter" onclick="terapkanFilter('normal')" style="width: 82%; margin-top: 5px; background-color: #666;">Normal (Tanpa Filter)</button>
     </div>
-    <button id="btnKonfirmasiCetak" onclick="konfirmasiCetak()" class="accent" style="margin-top: 15px;">OK (Selesai Edit)</button>
-    <div id="loadingPrint" class="loading">Memproses foto cetak...</div>
+    
+    <button id="btnKonfirmasiCetak" onclick="konfirmasiCetak()" class="accent" style="margin-top: 15px;">Kirim Ke Live Feeds</button>
+    <div id="loadingPrint" class="loading">Memproses finalisasi...</div>
   </div>
 
-  <!-- HALAMAN 5 -->
-  <div id="page5" class="page">
-    <h1 style="color: var(--primary-color); font-weight: 900;">Terima Kasih!</h1>
-    <p>Momen Anda telah tersimpan dengan aman.</p>
-    <p>Download Foto Kamu Di Bawah Ini:</p>
-    <button onclick="window.open('MASUKKAN_LINK_FOLDER_ALL_PHOTOS_DISINI', '_blank')">📂 Buka Galeri Foto</button>
-  </div>
+  <!-- AUDIO PLAYER GLOBAL UNTUK FEEDS -->
+  <audio id="globalAudioPlayer" style="display: none;"></audio>
 
   <script>
     // --- GANTI URL DI BAWAH INI DENGAN API URL DARI GOOGLE APPS SCRIPT ANDA ---
-    const API_URL = "https://script.google.com/macros/s/AKfycbyNGrNS679PsiQ5r6KZJAvpsOrVQNQ7sZUNth5u6OzXnq7W6CsNJTuBdA0PbPvkEo8F/exec";
+    const API_URL = "MASUKKAN_URL_GAS_DISINI";
 
     let namaUser = "", kuponUser = "", arrayFoto = [], audioBase64 = null, fotoTerpilih = null, filterSaatIni = "normal";
+    let savedAudioUrl = ""; // Menyimpan Link Audio yang di-generate dari tahap simpan 1
+    
     let mediaRecorder, audioChunks = [], timeoutRekaman;
     let imgObj = new Image(), imgScale = 1, imgX = 0, imgY = 0, isDragging = false, lastPinchDistance = null, lastPointX = null, lastPointY = null;
     const FRAME_X = 20, FRAME_Y = 20, FRAME_WIDTH = 260, FRAME_HEIGHT = 300;
@@ -150,8 +151,80 @@
     function gantiHalaman(idTujuan) {
       document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
       document.getElementById(idTujuan).classList.add('active');
+      window.scrollTo(0,0);
     }
 
+    // --- LOGIKA LIVE FEEDS ---
+    const globalPlayer = document.getElementById('globalAudioPlayer');
+    let currentPlayingBtn = null;
+
+    function muatFeeds() {
+      fetch(API_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify({ action: "getFeeds", payload: {} })
+      })
+      .then(res => res.json())
+      .then(data => {
+        document.getElementById('feedLoading').style.display = 'none';
+        const grid = document.getElementById('feedGrid');
+        grid.innerHTML = "";
+        
+        if(data.status === "success" && data.data.length > 0) {
+          data.data.forEach(item => {
+            const card = document.createElement('div');
+            card.className = 'feed-card';
+
+            const img = document.createElement('img');
+            img.src = item.imageUrl;
+            img.loading = "lazy";
+
+            const overlay = document.createElement('div');
+            overlay.className = 'feed-overlay';
+
+            const nameObj = document.createElement('div');
+            nameObj.className = 'feed-name';
+            nameObj.innerText = item.nama;
+
+            overlay.appendChild(nameObj);
+
+            if(item.audioUrl) {
+              const btnAudio = document.createElement('div');
+              btnAudio.className = 'btn-play';
+              btnAudio.innerHTML = '▶';
+              btnAudio.onclick = () => mainkanAudioFeed(item.audioUrl, btnAudio);
+              overlay.appendChild(btnAudio);
+            }
+
+            card.appendChild(img);
+            card.appendChild(overlay);
+            grid.appendChild(card);
+          });
+        } else {
+          grid.innerHTML = "<p style='grid-column: span 2; text-align: center; color: #888;'>Belum ada foto. Jadilah yang pertama!</p>";
+        }
+      })
+      .catch(err => {
+        document.getElementById('feedLoading').innerText = "Gagal memuat galeri.";
+      });
+    }
+
+    function mainkanAudioFeed(url, btnElement) {
+      if(globalPlayer.src === url && !globalPlayer.paused) {
+        globalPlayer.pause();
+        btnElement.innerHTML = '▶';
+      } else {
+        if(currentPlayingBtn) currentPlayingBtn.innerHTML = '▶';
+        globalPlayer.src = url;
+        globalPlayer.play();
+        btnElement.innerHTML = '⏸';
+        currentPlayingBtn = btnElement;
+        
+        globalPlayer.onended = () => { btnElement.innerHTML = '▶'; };
+      }
+    }
+
+    // --- ALUR FOTO ---
     function verifikasiLogin() {
       namaUser = document.getElementById('inputNama').value.trim();
       kuponUser = document.getElementById('inputKupon').value.trim();
@@ -226,7 +299,6 @@
       }
     }
 
-    // --- LOGIKA FETCH KE API VERCEL (PENGGANTI GOOGLE.SCRIPT.RUN) ---
     function simpanKeDrive() {
       if(arrayFoto.length === 0 && !audioBase64) { alert("Ambil minimal 1 foto atau suara."); return; }
       
@@ -244,6 +316,7 @@
       .then(response => response.json())
       .then(data => {
         if(data.status === "success") {
+          savedAudioUrl = data.data.audioUrl || ""; // Simpan URL audio untuk feed nanti
           document.getElementById('loadingSave').style.display = 'none';
           btnSave.disabled = false; btnSave.innerText = "💾 Save (Simpan Semua)";
           siapkanHalamanPrint();
@@ -342,14 +415,14 @@
     canvasContainer.addEventListener('touchstart', startDrag, {passive: false}); canvasContainer.addEventListener('touchmove', dragging, {passive: false}); canvasContainer.addEventListener('touchend', endDrag);
     canvasContainer.addEventListener('mousedown', startDrag); canvasContainer.addEventListener('mousemove', dragging); window.addEventListener('mouseup', endDrag); 
 
-    // --- LOGIKA FETCH UNTUK CETAK ---
     function konfirmasiCetak() {
-      const yakin = confirm("Apakah anda yakin dengan foto yang akan di cetak?");
+      const yakin = confirm("Kirim foto ini ke Galeri Live Feeds?");
       if(yakin) {
         const btnPrint = document.getElementById('btnKonfirmasiCetak'); btnPrint.disabled = true; btnPrint.innerText = "Memproses...";
         document.getElementById('loadingPrint').style.display = 'block';
+        
         const finalImage = document.getElementById('canvasFrame').toDataURL('image/jpeg', 0.9);
-        const payload = { image: finalImage, kupon: kuponUser };
+        const payload = { image: finalImage, kupon: kuponUser, nama: namaUser, audioUrl: savedAudioUrl };
         
         fetch(API_URL, {
           method: 'POST',
@@ -359,12 +432,21 @@
         .then(response => response.json())
         .then(data => {
           if(data.status === "success") {
-            document.getElementById('loadingPrint').style.display = 'none'; btnPrint.disabled = false; btnPrint.innerText = "OK (Selesai Edit)"; gantiHalaman('page5');
+            document.getElementById('loadingPrint').style.display = 'none'; 
+            btnPrint.disabled = false; btnPrint.innerText = "Kirim Ke Live Feeds"; 
+            
+            // Mereset formulir dan beralih kembali ke Feeds
+            alert("Memori Anda berhasil dibagikan!");
+            namaUser = ""; kuponUser = ""; arrayFoto = []; audioBase64 = null; savedAudioUrl = ""; fotoTerpilih = null;
+            document.getElementById('inputNama').value = ""; document.getElementById('inputKupon').value = "";
+            
+            gantiHalaman('page0');
+            muatFeeds(); // Tarik data galeri terbaru
           } else { throw new Error(data.message); }
         })
         .catch(error => {
           alert("Gagal memproses cetak: " + error.message);
-          document.getElementById('loadingPrint').style.display = 'none'; btnPrint.disabled = false; btnPrint.innerText = "OK (Selesai Edit)";
+          document.getElementById('loadingPrint').style.display = 'none'; btnPrint.disabled = false; btnPrint.innerText = "Kirim Ke Live Feeds";
         });
       }
     }
