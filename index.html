@@ -134,15 +134,20 @@
     <div id="loadingPrint" class="loading">Memproses finalisasi...</div>
   </div>
 
-  <!-- AUDIO PLAYER GLOBAL UNTUK FEEDS -->
-  <audio id="globalAudioPlayer" style="display: none;"></audio>
+  <!-- HALAMAN 5: THANK YOU -->
+  <div id="page5" class="page">
+    <h1 style="color: var(--primary-color); font-weight: 900;">Terima Kasih!</h1>
+    <p>Momen Anda telah tersimpan dengan aman.</p>
+    <p>Download Foto Kamu Di Bawah Ini:</p>
+    <button onclick="window.open('https://drive.google.com/drive/folders/1RuDX-Poq7DcUK6_JQV9Bzga5xDD2FOwR?usp=sharing', '_blank')">📂 Buka Galeri Foto</button>
+  </div>
 
   <script>
     // --- GANTI URL DI BAWAH INI DENGAN API URL DARI GOOGLE APPS SCRIPT ANDA ---
     const API_URL = "https://script.google.com/macros/s/AKfycbyNGrNS679PsiQ5r6KZJAvpsOrVQNQ7sZUNth5u6OzXnq7W6CsNJTuBdA0PbPvkEo8F/exec";
 
     let namaUser = "", kuponUser = "", arrayFoto = [], audioBase64 = null, fotoTerpilih = null, filterSaatIni = "normal";
-    let savedAudioUrl = ""; // Menyimpan Link Audio yang di-generate dari tahap simpan 1
+    let savedAudioUrl = ""; 
     
     let mediaRecorder, audioChunks = [], timeoutRekaman;
     let imgObj = new Image(), imgScale = 1, imgX = 0, imgY = 0, isDragging = false, lastPinchDistance = null, lastPointX = null, lastPointY = null;
@@ -154,8 +159,10 @@
       window.scrollTo(0,0);
     }
 
-    // --- LOGIKA LIVE FEEDS ---
-    const globalPlayer = document.getElementById('globalAudioPlayer');
+    // =========================================================================
+    // LOGIKA PEMUTAR AUDIO BARU (KHUSUS IOS/SAFARI)
+    // =========================================================================
+    let currentAudioObj = null;
     let currentPlayingBtn = null;
 
     function muatFeeds() {
@@ -172,33 +179,40 @@
         
         if(data.status === "success" && data.data.length > 0) {
           data.data.forEach(item => {
-            const card = document.createElement('div');
-            card.className = 'feed-card';
-
-            const img = document.createElement('img');
-            img.src = item.imageUrl;
-            img.loading = "lazy";
-
-            const overlay = document.createElement('div');
-            overlay.className = 'feed-overlay';
-
-            const nameObj = document.createElement('div');
-            nameObj.className = 'feed-name';
-            nameObj.innerText = item.nama;
-
+            const card = document.createElement('div'); card.className = 'feed-card';
+            const img = document.createElement('img'); img.src = item.imageUrl; img.loading = "lazy";
+            const overlay = document.createElement('div'); overlay.className = 'feed-overlay';
+            const nameObj = document.createElement('div'); nameObj.className = 'feed-name'; nameObj.innerText = item.nama;
+            
             overlay.appendChild(nameObj);
 
             if(item.audioUrl) {
+              let playableUrl = item.audioUrl;
+              
+              // 1. Ubah Base64 jadi Virtual File (Blob URL) agar dikenali Apple sebagai file asli
+              if (playableUrl.startsWith('data:')) {
+                try {
+                  const parts = playableUrl.split(',');
+                  const contentType = parts[0].split(':')[1].split(';')[0];
+                  const byteCharacters = atob(parts[1]);
+                  const byteArray = new Uint8Array(byteCharacters.length);
+                  for (let i = 0; i < byteCharacters.length; i++) {
+                    byteArray[i] = byteCharacters.charCodeAt(i);
+                  }
+                  playableUrl = URL.createObjectURL(new Blob([byteArray], {type: contentType}));
+                } catch(e) {
+                  console.error("Gagal convert Blob:", e);
+                }
+              }
+
               const btnAudio = document.createElement('div');
               btnAudio.className = 'btn-play';
               btnAudio.innerHTML = '▶';
-              btnAudio.onclick = () => mainkanAudioFeed(item.audioUrl, btnAudio);
+              btnAudio.onclick = () => mainkanAudioFeed(playableUrl, btnAudio);
               overlay.appendChild(btnAudio);
             }
 
-            card.appendChild(img);
-            card.appendChild(overlay);
-            grid.appendChild(card);
+            card.appendChild(img); card.appendChild(overlay); grid.appendChild(card);
           });
         } else {
           grid.innerHTML = "<p style='grid-column: span 2; text-align: center; color: #888;'>Belum ada foto. Jadilah yang pertama!</p>";
@@ -209,30 +223,43 @@
       });
     }
 
-function mainkanAudioFeed(url, btnElement) {
-      if(globalPlayer.src === url && !globalPlayer.paused) {
-        globalPlayer.pause();
+    function mainkanAudioFeed(url, btnElement) {
+      // Jika menekan tombol yang sedang berjalan = Pause
+      if (currentPlayingBtn === btnElement && currentAudioObj && !currentAudioObj.paused) {
+        currentAudioObj.pause();
         btnElement.innerHTML = '▶';
-      } else {
-        if(currentPlayingBtn) currentPlayingBtn.innerHTML = '▶';
-        globalPlayer.src = url;
-        globalPlayer.load(); // Wajib untuk iOS setelah mengganti .src
-        
-        let playPromise = globalPlayer.play();
-        if (playPromise !== undefined) {
-          playPromise.then(_ => {
-            btnElement.innerHTML = '⏸';
-            currentPlayingBtn = btnElement;
-          }).catch(error => {
-            console.error("Gagal memutar audio:", error);
-            alert("Gagal memutar. Pastikan iPhone Anda tidak dalam Mode Hening (Silent/Ringer off).");
-            btnElement.innerHTML = '▶';
-          });
-        }
-        
-        globalPlayer.onended = () => { btnElement.innerHTML = '▶'; };
+        return;
       }
+
+      // Hentikan suara lain jika ada yang sedang berjalan
+      if (currentAudioObj) {
+        currentAudioObj.pause();
+        if (currentPlayingBtn) currentPlayingBtn.innerHTML = '▶';
+      }
+
+      // 2. Gunakan metode pembuatan Audio baru secara on-the-fly (Lolos deteksi bot Safari)
+      currentAudioObj = new Audio(url);
+      currentPlayingBtn = btnElement;
+      
+      let playPromise = currentAudioObj.play();
+      if (playPromise !== undefined) {
+        playPromise.then(_ => {
+          btnElement.innerHTML = '⏸';
+        }).catch(error => {
+          console.error("Diblokir iOS:", error);
+          alert("Safari memblokir pemutaran otomatis. Coba ketuk Play satu kali lagi.");
+          btnElement.innerHTML = '▶';
+          currentAudioObj = null;
+        });
+      }
+      
+      currentAudioObj.onended = () => { 
+        btnElement.innerHTML = '▶'; 
+        currentAudioObj = null;
+        currentPlayingBtn = null;
+      };
     }
+    // =========================================================================
 
     // --- ALUR FOTO ---
     function verifikasiLogin() {
@@ -271,39 +298,32 @@ function mainkanAudioFeed(url, btnElement) {
       reader.readAsDataURL(file);
     }
 
-    
     async function toggleRekam() {
       const btn = document.getElementById('btnRekam');
       if (btn.innerText.includes("Mulai") || btn.innerText.includes("Ulang")) {
         try {
           const stream = await navigator.mediaDevices.getUserMedia({ audio: true }); 
           
-          // Memaksa penggunaan format yang paling didukung iOS
           let options = { mimeType: 'audio/webm' };
           if (MediaRecorder.isTypeSupported('audio/mp4')) {
             options = { mimeType: 'audio/mp4' };
           }
-          
           mediaRecorder = new MediaRecorder(stream, options); 
           audioChunks = [];
           
           mediaRecorder.ondataavailable = e => { if (e.data.size > 0) audioChunks.push(e.data); };
           mediaRecorder.onstop = () => {
-            // Memastikan tipe Blob diwariskan dari setingan mediaRecorder
             const audioBlob = new Blob(audioChunks, { type: mediaRecorder.mimeType }); 
             const reader = new FileReader();
-            
             reader.onloadend = () => {
               audioBase64 = reader.result; 
               const playback = document.getElementById('audioPlayback');
               playback.src = audioBase64;
-              // Memaksa pemuatan ulang file setelah sumber ditetapkan
-              playback.load(); 
+              playback.load(); // Memaksa Safari membaca ulang
               
               document.getElementById('audioContainer').style.display = 'flex'; 
               document.getElementById('btnHapusAudio').style.display = 'block';
             };
-            
             reader.readAsDataURL(audioBlob);
             stream.getTracks().forEach(track => track.stop());
           };
@@ -326,7 +346,6 @@ function mainkanAudioFeed(url, btnElement) {
     function prosesAudioNatif(event) {
       const file = event.target.files[0]; if(!file) return;
       const reader = new FileReader();
-      
       reader.onload = function(e) {
         audioBase64 = e.target.result; 
         const playback = document.getElementById('audioPlayback');
@@ -343,9 +362,14 @@ function mainkanAudioFeed(url, btnElement) {
 
     function hapusAudio() {
       if(confirm("Hapus rekaman?")) {
-        audioBase64 = null; document.getElementById('audioPlayback').pause(); document.getElementById('audioPlayback').src = "";
-        document.getElementById('audioContainer').style.display = 'none'; document.getElementById('btnHapusAudio').style.display = 'none';
-        document.getElementById('btnRekam').innerText = "🎙️ Mulai Rekam"; document.getElementById('btnRekam').classList.remove('accent');
+        audioBase64 = null; 
+        const playback = document.getElementById('audioPlayback');
+        playback.pause(); playback.src = "";
+        
+        document.getElementById('audioContainer').style.display = 'none'; 
+        document.getElementById('btnHapusAudio').style.display = 'none';
+        document.getElementById('btnRekam').innerText = "🎙️ Mulai Rekam"; 
+        document.getElementById('btnRekam').classList.remove('accent');
       }
     }
 
@@ -366,7 +390,7 @@ function mainkanAudioFeed(url, btnElement) {
       .then(response => response.json())
       .then(data => {
         if(data.status === "success") {
-          savedAudioUrl = data.data.audioUrl || ""; // Simpan URL audio untuk feed nanti
+          savedAudioUrl = data.data.audioUrl || "";
           document.getElementById('loadingSave').style.display = 'none';
           btnSave.disabled = false; btnSave.innerText = "💾 Save (Simpan Semua)";
           siapkanHalamanPrint();
@@ -485,13 +509,12 @@ function mainkanAudioFeed(url, btnElement) {
             document.getElementById('loadingPrint').style.display = 'none'; 
             btnPrint.disabled = false; btnPrint.innerText = "Kirim Ke Live Feeds"; 
             
-            // Mereset formulir dan beralih kembali ke Feeds
             alert("Memori Anda berhasil dibagikan!");
             namaUser = ""; kuponUser = ""; arrayFoto = []; audioBase64 = null; savedAudioUrl = ""; fotoTerpilih = null;
             document.getElementById('inputNama').value = ""; document.getElementById('inputKupon').value = "";
             
             gantiHalaman('page0');
-            muatFeeds(); // Tarik data galeri terbaru
+            muatFeeds(); 
           } else { throw new Error(data.message); }
         })
         .catch(error => {
