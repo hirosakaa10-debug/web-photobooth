@@ -209,16 +209,26 @@
       });
     }
 
-    function mainkanAudioFeed(url, btnElement) {
+function mainkanAudioFeed(url, btnElement) {
       if(globalPlayer.src === url && !globalPlayer.paused) {
         globalPlayer.pause();
         btnElement.innerHTML = '▶';
       } else {
         if(currentPlayingBtn) currentPlayingBtn.innerHTML = '▶';
         globalPlayer.src = url;
-        globalPlayer.play();
-        btnElement.innerHTML = '⏸';
-        currentPlayingBtn = btnElement;
+        globalPlayer.load(); // Wajib untuk iOS setelah mengganti .src
+        
+        let playPromise = globalPlayer.play();
+        if (playPromise !== undefined) {
+          playPromise.then(_ => {
+            btnElement.innerHTML = '⏸';
+            currentPlayingBtn = btnElement;
+          }).catch(error => {
+            console.error("Gagal memutar audio:", error);
+            alert("Gagal memutar. Pastikan iPhone Anda tidak dalam Mode Hening (Silent/Ringer off).");
+            btnElement.innerHTML = '▶';
+          });
+        }
         
         globalPlayer.onended = () => { btnElement.innerHTML = '▶'; };
       }
