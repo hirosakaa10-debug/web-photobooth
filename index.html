@@ -261,32 +261,72 @@
       reader.readAsDataURL(file);
     }
 
+    
     async function toggleRekam() {
       const btn = document.getElementById('btnRekam');
       if (btn.innerText.includes("Mulai") || btn.innerText.includes("Ulang")) {
         try {
-          const stream = await navigator.mediaDevices.getUserMedia({ audio: true }); mediaRecorder = new MediaRecorder(stream); audioChunks = [];
+          const stream = await navigator.mediaDevices.getUserMedia({ audio: true }); 
+          
+          // Memaksa penggunaan format yang paling didukung iOS
+          let options = { mimeType: 'audio/webm' };
+          if (MediaRecorder.isTypeSupported('audio/mp4')) {
+            options = { mimeType: 'audio/mp4' };
+          }
+          
+          mediaRecorder = new MediaRecorder(stream, options); 
+          audioChunks = [];
+          
           mediaRecorder.ondataavailable = e => { if (e.data.size > 0) audioChunks.push(e.data); };
           mediaRecorder.onstop = () => {
-            const reader = new FileReader(); reader.readAsDataURL(new Blob(audioChunks));
+            // Memastikan tipe Blob diwariskan dari setingan mediaRecorder
+            const audioBlob = new Blob(audioChunks, { type: mediaRecorder.mimeType }); 
+            const reader = new FileReader();
+            
             reader.onloadend = () => {
-              audioBase64 = reader.result; document.getElementById('audioPlayback').src = audioBase64;
-              document.getElementById('audioContainer').style.display = 'flex'; document.getElementById('btnHapusAudio').style.display = 'block';
-            }; stream.getTracks().forEach(track => track.stop());
+              audioBase64 = reader.result; 
+              const playback = document.getElementById('audioPlayback');
+              playback.src = audioBase64;
+              // Memaksa pemuatan ulang file setelah sumber ditetapkan
+              playback.load(); 
+              
+              document.getElementById('audioContainer').style.display = 'flex'; 
+              document.getElementById('btnHapusAudio').style.display = 'block';
+            };
+            
+            reader.readAsDataURL(audioBlob);
+            stream.getTracks().forEach(track => track.stop());
           };
-          mediaRecorder.start(); btn.innerText = "🛑 Hentikan Rekaman"; btn.classList.add('accent');
-          timeoutRekaman = setTimeout(() => { if(mediaRecorder.state === "recording") toggleRekam(); }, 30000);
-        } catch (err) { btn.style.display = "none"; document.getElementById('areaFallback').style.display = "block"; }
-      } else { mediaRecorder.stop(); clearTimeout(timeoutRekaman); btn.innerText = "🎙️ Rekam Ulang"; btn.classList.remove('accent'); }
+
+          mediaRecorder.start(); 
+          btn.innerText = "🛑 Hentikan Rekaman"; 
+          btn.classList.add('accent');
+          timeoutRekaman = setTimeout(() => { if(mediaRecorder && mediaRecorder.state === "recording") toggleRekam(); }, 30000);
+        } catch (err) { 
+          btn.style.display = "none"; document.getElementById('areaFallback').style.display = "block"; 
+        }
+      } else { 
+        mediaRecorder.stop(); 
+        clearTimeout(timeoutRekaman); 
+        btn.innerText = "🎙️ Rekam Ulang"; 
+        btn.classList.remove('accent'); 
+      }
     }
 
     function prosesAudioNatif(event) {
       const file = event.target.files[0]; if(!file) return;
       const reader = new FileReader();
+      
       reader.onload = function(e) {
-        audioBase64 = e.target.result; document.getElementById('audioPlayback').src = audioBase64;
-        document.getElementById('audioContainer').style.display = 'flex'; document.getElementById('btnHapusAudio').style.display = 'block';
-        document.querySelector('.iphone-warning').style.display = 'none'; event.target.value = ''; 
+        audioBase64 = e.target.result; 
+        const playback = document.getElementById('audioPlayback');
+        playback.src = audioBase64;
+        playback.load();
+        
+        document.getElementById('audioContainer').style.display = 'flex'; 
+        document.getElementById('btnHapusAudio').style.display = 'block';
+        document.querySelector('.iphone-warning').style.display = 'none'; 
+        event.target.value = ''; 
       }
       reader.readAsDataURL(file);
     }
