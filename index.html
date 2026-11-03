@@ -32,10 +32,12 @@
     .photo-grid { display: flex; gap: 10px; overflow-x: auto; margin-top: 15px; margin-bottom: 15px; padding-bottom: 10px; }
     .photo-wrapper { position: relative; display: inline-block; }
     .photo-wrapper img { width: 60px; height: 80px; object-fit: cover; border-radius: 5px; border: 2px solid transparent; }
-    .btn-delete { position: absolute; top: -8px; right: -8px; background-color: red; color: white; border: none; border-radius: 50%; width: 24px; height: 24px; font-size: 12px; font-weight: bold; cursor: pointer; display: flex; justify-content: center; align-items: center; padding: 0; margin: 0; box-shadow: 0 2px 4px rgba(0,0,0,0.3); }
+    
+    /* DESAIN TOMBOL HAPUS */
+    .btn-delete { position: absolute; top: -8px; right: -8px; background-color: red; color: white; border: none; border-radius: 50%; width: 24px; height: 24px; font-size: 12px; font-weight: bold; cursor: pointer; display: flex; justify-content: center; align-items: center; padding: 0; margin: 0; box-shadow: 0 2px 4px rgba(0,0,0,0.3); transition: background-color 0.2s; }
+    
     .btn-delete-audio { background-color: transparent; color: red; border: 2px solid red; padding: 10px 20px; margin-top: 10px; border-radius: 20px; cursor: pointer; font-family: 'Montserrat'; font-weight: bold; display: none; width: auto; }
 
-    /* DESAIN KAMERA LANGSUNG DAN BINGKAI POLAROID */
     .camera-polaroid-frame { width: 260px; height: 300px; margin: 0 auto 15px auto; background: #222; position: relative; overflow: hidden; border: 15px solid white; border-bottom: 50px solid white; box-shadow: 0 4px 10px rgba(0,0,0,0.2); border-radius: 2px; }
     #videoFeed { width: 100%; height: 100%; object-fit: cover; }
     
@@ -71,7 +73,7 @@
 
   <!-- HALAMAN 1: LOGIN -->
   <div id="page1" class="page">
-    <div style="text-align: left;"><button onclick="gantiHalaman('page0')" class="btn-back">← Kembali ke Feeds</button></div>
+    <div style="text-align: left;"><button onclick="gantiHalaman('page0'); muatFeeds();" class="btn-back">← Kembali ke Feeds</button></div>
     <h2 style="color: var(--primary-color); font-weight: 900;">Virtual Photobooth</h2>
     <p>Silakan isi data diri Anda</p>
     <input type="text" id="inputNama" placeholder="Nama Anda (Cth: Budi)">
@@ -79,42 +81,35 @@
     <button id="btnLogin" onclick="verifikasiLogin()">Lanjut</button>
   </div>
 
-  <!-- HALAMAN 2: CAMERA & VOICE (DIPERBARUI DENGAN KAMERA LANGSUNG) -->
+  <!-- HALAMAN 2: CAMERA & VOICE -->
   <div id="page2" class="page">
     <h3 style="color: var(--primary-color); margin-bottom: 5px;">Ambil Momenmu</h3>
     <p style="font-size: 11px; margin-top: 0; margin-bottom: 15px;">Posisikan senyummu di dalam bingkai polaroid</p>
     
-    <!-- Area Web Camera Polaroid -->
     <div class="camera-polaroid-frame">
       <video id="videoFeed" autoplay playsinline></video>
       <canvas id="captureCanvas" width="260" height="300" style="display:none;"></canvas>
     </div>
     
-    <!-- Tombol Kontrol Kamera -->
     <div style="display: flex; justify-content: center; gap: 10px; margin-bottom: 10px; width: 100%; max-width: 330px; margin: 0 auto;">
       <button id="btnJepretWeb" onclick="jepretKameraWeb()" class="accent" style="flex: 2; margin: 0;">📸 Jepret (<span id="countFoto">0</span>/5)</button>
       <button onclick="gantiKamera()" style="flex: 1; margin: 0; background: #666; font-size: 13px;">🔄 Putar</button>
     </div>
 
-    <!-- Fallback/Cadangan Jika Browser Memblokir Akses Kamera Website -->
     <div id="fallbackKameraUpload" style="display: none; margin-top: 15px;">
-      <label for="kameraNatif" class="btn-native" style="background-color: #444; width: 85%; font-size: 12px; padding: 10px;">
-        ⚠️ Gunakan Kamera iPhone Bawaan (Jika Error)
-      </label>
+      <label for="kameraNatif" class="btn-native" style="background-color: #444; width: 85%; font-size: 12px; padding: 10px;">⚠️ Gunakan Kamera Bawaan (Jika Error)</label>
       <input type="file" id="kameraNatif" accept="image/*" capture="user" onchange="prosesFotoNatif(event)">
     </div>
 
-    <!-- Preview Hasil Jepretan -->
     <div id="previewArea" class="photo-grid"></div>
     <hr style="border: 1px solid #ddd; margin: 20px 0;">
 
-    <!-- Suara -->
     <h3>Tinggalkan Pesan Suara</h3>
     <p style="font-size: 12px; margin-top: 0;">Maksimal 30 Detik</p>
     <button id="btnRekam" onclick="toggleRekam()">🎙️ Mulai Rekam</button>
     
     <div id="areaFallback" style="display: none; margin-top: 10px;">
-      <div class="iphone-warning">Ketuk tombol di bawah. Jika layar kamera terbuka, abaikan saja karena sistem <b>hanya akan menyimpan suaranya</b>.</div>
+      <div class="iphone-warning">Ketuk tombol di bawah. Abaikan layar kamera jika terbuka.</div>
       <label for="audioNatif" class="btn-native" style="background-color: var(--primary-color);">🎙️ Buka Perekam iPhone</label>
       <input type="file" id="audioNatif" accept="audio/*" capture="microphone" onchange="prosesAudioNatif(event)">
     </div>
@@ -131,7 +126,7 @@
 
   <!-- HALAMAN 3: PILIH FOTO UNTUK DIPRINT -->
   <div id="page3" class="page">
-    <h3 style="color: var(--primary-color);">Pilih 1 Foto Untuk Dipublikasi</h3>
+    <h3 style="color: var(--primary-color);">Pilih 1 Foto Publikasi</h3>
     <div id="selectionGrid" style="display: flex; flex-wrap: wrap; gap: 10px; justify-content: center;"></div>
     <button id="btnLanjutEdit" onclick="lanjutKeEdit()" class="accent" style="margin-top: 20px;">Lanjut Edit</button>
   </div>
@@ -144,9 +139,6 @@
     <p style="font-size: 12px; margin-top: -10px;">Foto Anda sudah otomatis di posisi yang pas!</p>
     
     <div id="canvasContainer"><canvas id="canvasFrame" width="300" height="400"></canvas></div>
-    
-    <!-- Tombol Zoom dihilangkan secara visual karena sudah tidak terlalu dibutuhkan, 
-         tetapi fungsinya tetap ada jika tamu secara tidak sengaja mencubit layar -->
     <div class="zoom-controls" style="display: none;">
       <button class="btn-zoom" onclick="aturZoom(-0.1)">-</button>
       <button class="btn-zoom" onclick="aturZoom(0.1)">+</button>
@@ -167,7 +159,7 @@
     <h1 style="color: var(--primary-color); font-weight: 900;">Terima Kasih!</h1>
     <p>Momen Anda telah tersimpan dengan aman.</p>
     <p>Download Foto Kamu Di Bawah Ini:</p>
-    <button onclick="window.open('https://drive.google.com/drive/folders/1RuDX-Poq7DcUK6_JQV9Bzga5xDD2FOwR?usp=sharing', '_blank')">📂 Buka Galeri Foto</button>
+    <button onclick="window.open('MASUKKAN_LINK_FOLDER_ALL_PHOTOS_DISINI', '_blank')">📂 Buka Galeri Foto</button>
   </div>
 
   <script>
@@ -176,10 +168,7 @@
 
     let namaUser = "", kuponUser = "", arrayFoto = [], audioBase64 = null, fotoTerpilih = null, filterSaatIni = "normal";
     let savedAudioUrl = ""; 
-    
-    // Variabel Kamera Baru
-    let videoStream = null;
-    let facingMode = "user"; // "user" untuk kamera depan (selfie), "environment" untuk belakang
+    let videoStream = null; let facingMode = "user"; 
     
     let mediaRecorder, audioChunks = [], timeoutRekaman;
     let imgObj = new Image(), imgScale = 1, imgX = 0, imgY = 0, isDragging = false, lastPinchDistance = null, lastPointX = null, lastPointY = null;
@@ -192,7 +181,7 @@
     }
 
     // =========================================================================
-    // LOGIKA PEMUTAR AUDIO WEB AUDIO API (ANTI BLOKIR SAFARI)
+    // LOGIKA PEMUTAR AUDIO API (ANTI CACHE SAFARI & ANTI BLOKIR)
     // =========================================================================
     let audioCtx = null;
     let currentAudioSource = null;
@@ -204,7 +193,10 @@
     }
 
     function muatFeeds() {
-      fetch(API_URL, {
+      // PERBAIKAN: Menambahkan timestamp agar Safari tidak menggunakan cache (Anti Halaman Bisu)
+      const fetchUrl = API_URL + "?timestamp=" + new Date().getTime();
+      
+      fetch(fetchUrl, {
         method: 'POST',
         headers: { 'Content-Type': 'text/plain;charset=utf-8' },
         body: JSON.stringify({ action: "getFeeds", payload: {} })
@@ -213,6 +205,7 @@
       .then(data => {
         document.getElementById('feedLoading').style.display = 'none';
         const grid = document.getElementById('feedGrid'); grid.innerHTML = "";
+        
         if(data.status === "success" && data.data.length > 0) {
           data.data.forEach(item => {
             const card = document.createElement('div'); card.className = 'feed-card';
@@ -252,7 +245,7 @@
         const binaryString = window.atob(base64String); const len = binaryString.length; const bytes = new Uint8Array(len);
         for (let i = 0; i < len; i++) { bytes[i] = binaryString.charCodeAt(i); }
 
-        audioCtx.decodeAudioData(bytes.buffer, function(buffer) {
+        audioCtx.decodeAudioData(bytes.buffer.slice(0), function(buffer) {
           const source = audioCtx.createBufferSource(); source.buffer = buffer; source.connect(audioCtx.destination); source.start(0); 
           currentAudioSource = source; btnElement.innerHTML = '⏸';
           source.onended = () => { btnElement.innerHTML = '▶'; if (currentPlayingBtn === btnElement) { currentAudioSource = null; currentPlayingBtn = null; } };
@@ -261,88 +254,53 @@
     }
 
     // =========================================================================
-    // LOGIKA KAMERA IN-BROWSER (Baru)
+    // LOGIKA KAMERA & PENGELOLAAN FOTO
     // =========================================================================
     async function mulaiKamera() {
       if (videoStream) { videoStream.getTracks().forEach(track => track.stop()); }
       try {
         videoStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: facingMode } });
-        const video = document.getElementById('videoFeed');
-        video.srcObject = videoStream;
-        // Berikan efek cermin (mirror) jika pakai kamera depan agar pergerakan tamu tidak membingungkan
+        const video = document.getElementById('videoFeed'); video.srcObject = videoStream;
         video.style.transform = facingMode === "user" ? "scaleX(-1)" : "scaleX(1)";
         document.getElementById('fallbackKameraUpload').style.display = "none";
       } catch (err) {
         console.error("Kamera diblokir/error:", err);
-        // Jika ditolak browser, tampilkan tombol upload manual sebagai cadangan
         document.getElementById('fallbackKameraUpload').style.display = "block";
       }
     }
 
-    function gantiKamera() {
-      facingMode = facingMode === "user" ? "environment" : "user";
-      mulaiKamera();
-    }
-
-    function matikanKamera() {
-      if (videoStream) {
-        videoStream.getTracks().forEach(track => track.stop());
-        videoStream = null;
-      }
-    }
+    function gantiKamera() { facingMode = facingMode === "user" ? "environment" : "user"; mulaiKamera(); }
+    function matikanKamera() { if (videoStream) { videoStream.getTracks().forEach(track => track.stop()); videoStream = null; } }
 
     function jepretKameraWeb() {
       if(arrayFoto.length >= 5) { alert("Maksimal 5 foto!"); return; }
-      const video = document.getElementById('videoFeed');
-      if (!video.videoWidth) return; // Pastikan video sudah memuat gambar
+      const video = document.getElementById('videoFeed'); if (!video.videoWidth) return; 
       
-      const canvas = document.getElementById('captureCanvas');
-      const ctx = canvas.getContext('2d');
-      
-      const targetWidth = canvas.width;    // 260
-      const targetHeight = canvas.height;  // 300
-      
-      const videoRatio = video.videoWidth / video.videoHeight;
-      const targetRatio = targetWidth / targetHeight;
+      const canvas = document.getElementById('captureCanvas'); const ctx = canvas.getContext('2d');
+      const targetWidth = canvas.width; const targetHeight = canvas.height;  
+      const videoRatio = video.videoWidth / video.videoHeight; const targetRatio = targetWidth / targetHeight;
       
       let drawWidth, drawHeight, startX, startY;
-      
-      // Menghitung crop otomatis agar gambar video memotong sempurna sesuai bingkai
       if (videoRatio > targetRatio) {
-        drawHeight = targetHeight;
-        drawWidth = video.videoWidth * (targetHeight / video.videoHeight);
-        startX = (targetWidth - drawWidth) / 2;
-        startY = 0;
+        drawHeight = targetHeight; drawWidth = video.videoWidth * (targetHeight / video.videoHeight); startX = (targetWidth - drawWidth) / 2; startY = 0;
       } else {
-        drawWidth = targetWidth;
-        drawHeight = video.videoHeight * (targetWidth / video.videoWidth);
-        startX = 0;
-        startY = (targetHeight - drawHeight) / 2;
+        drawWidth = targetWidth; drawHeight = video.videoHeight * (targetWidth / video.videoWidth); startX = 0; startY = (targetHeight - drawHeight) / 2;
       }
       
       ctx.save();
-      // Balikkan gambar saat disimpan jika menggunakan kamera depan (agar hasil tidak terbalik)
-      if (facingMode === "user") {
-        ctx.translate(targetWidth, 0);
-        ctx.scale(-1, 1);
-      }
-      
+      if (facingMode === "user") { ctx.translate(targetWidth, 0); ctx.scale(-1, 1); }
       ctx.fillStyle = "white"; ctx.fillRect(0,0,targetWidth,targetHeight);
       ctx.drawImage(video, startX, startY, drawWidth, drawHeight);
       ctx.restore();
       
-      arrayFoto.push(canvas.toDataURL('image/jpeg', 0.9));
-      renderPreview();
+      arrayFoto.push(canvas.toDataURL('image/jpeg', 0.9)); renderPreview();
     }
-    // =========================================================================
 
     function verifikasiLogin() {
       namaUser = document.getElementById('inputNama').value.trim();
       kuponUser = document.getElementById('inputKupon').value.trim();
       if(namaUser === "" || kuponUser === "") { alert("Nama dan Nomor Kupon WAJIB diisi keduanya!"); return; }
-      gantiHalaman('page2');
-      // Menyalakan kamera otomatis saat tamu masuk ke halaman 2
-      mulaiKamera(); 
+      gantiHalaman('page2'); mulaiKamera(); 
     }
 
     function renderPreview() {
@@ -352,12 +310,24 @@
         const wrapper = document.createElement('div'); wrapper.className = 'photo-wrapper';
         const imgEl = document.createElement('img'); imgEl.src = src;
         const btnDelete = document.createElement('button'); btnDelete.className = 'btn-delete'; btnDelete.innerHTML = '✕';
-        btnDelete.onclick = () => { if(confirm("Hapus foto ini?")) { arrayFoto.splice(index, 1); renderPreview(); } };
+        
+        // PERBAIKAN: Tombol Hapus "Soft Delete" agar tidak freeze kamera
+        btnDelete.onclick = function() {
+          if(this.innerHTML === '✕') {
+             this.innerHTML = '?'; 
+             this.style.backgroundColor = 'orange'; // Berubah oranye untuk konfirmasi
+             setTimeout(() => { 
+                if(this) { this.innerHTML = '✕'; this.style.backgroundColor = 'red'; }
+             }, 3000); // Kembali normal dalam 3 detik jika tidak jadi ditekan
+          } else {
+             arrayFoto.splice(index, 1); renderPreview(); 
+          }
+        };
+        
         wrapper.appendChild(imgEl); wrapper.appendChild(btnDelete); previewArea.appendChild(wrapper);
       });
     }
 
-    // Fungsi ini dipakai HANYA JIKA kamera browser bermasalah dan tamu menekan tombol Fallback
     function prosesFotoNatif(event) {
       if(arrayFoto.length >= 5) { alert("Maksimal 5 foto!"); return; }
       const file = event.target.files[0]; if(!file) return;
@@ -418,19 +388,16 @@
     }
 
     function hapusAudio() {
-      if(confirm("Hapus rekaman?")) {
-        audioBase64 = null; const playback = document.getElementById('audioPlayback'); playback.pause(); playback.src = "";
-        document.getElementById('audioContainer').style.display = 'none'; document.getElementById('btnHapusAudio').style.display = 'none';
-        document.getElementById('btnRekam').innerText = "🎙️ Mulai Rekam"; document.getElementById('btnRekam').classList.remove('accent');
-      }
+      // Tombol hapus audio diganti tanpa confirm untuk mencegah freeze jika kamera masih menyala
+      audioBase64 = null; const playback = document.getElementById('audioPlayback'); playback.pause(); playback.src = "";
+      document.getElementById('audioContainer').style.display = 'none'; document.getElementById('btnHapusAudio').style.display = 'none';
+      document.getElementById('btnRekam').innerText = "🎙️ Mulai Rekam"; document.getElementById('btnRekam').classList.remove('accent');
     }
 
     // --- PENYIMPANAN KE GOOGLE ---
     function simpanKeDrive() {
       if(arrayFoto.length === 0 && !audioBase64) { alert("Ambil minimal 1 foto atau suara."); return; }
-      
-      const btnSave = document.getElementById('btnSimpanDrive');
-      btnSave.disabled = true; btnSave.innerText = "Menyimpan... Mohon Tunggu";
+      const btnSave = document.getElementById('btnSimpanDrive'); btnSave.disabled = true; btnSave.innerText = "Menyimpan... Mohon Tunggu";
       document.getElementById('loadingSave').style.display = 'block';
       
       const payload = { nama: namaUser, kupon: kuponUser, photos: arrayFoto, audio: audioBase64 };
@@ -457,14 +424,10 @@
     }
 
     function siapkanHalamanPrint() {
-      // Wajib matikan kamera sebelum pindah halaman agar baterai HP tamu tidak boros!
-      matikanKamera(); 
-      gantiHalaman('page3');
-      
+      matikanKamera(); gantiHalaman('page3');
       const grid = document.getElementById('selectionGrid'); grid.innerHTML = "";
       arrayFoto.forEach((src) => {
-        const img = document.createElement('img'); img.src = src;
-        img.style.width = "100px"; img.style.borderRadius = "10px"; img.style.cursor = "pointer";
+        const img = document.createElement('img'); img.src = src; img.style.width = "100px"; img.style.borderRadius = "10px"; img.style.cursor = "pointer";
         if(fotoTerpilih === src) img.style.border = "4px solid var(--accent-color)";
         img.onclick = () => { document.querySelectorAll('#selectionGrid img').forEach(i => i.style.border = "none"); img.style.border = "4px solid var(--accent-color)"; fotoTerpilih = src; };
         grid.appendChild(img);
@@ -477,7 +440,6 @@
 
     function inisialisasiEditFoto() {
       imgObj.onload = () => {
-        // Karena foto sudah dipotong 260x300 sejak awal, skalanya PASTI 1.0 (sempurna di tengah)
         const scaleX = FRAME_WIDTH / imgObj.width; const scaleY = FRAME_HEIGHT / imgObj.height; imgScale = Math.max(scaleX, scaleY); 
         imgX = FRAME_X + (FRAME_WIDTH - (imgObj.width * imgScale)) / 2; imgY = FRAME_Y + (FRAME_HEIGHT - (imgObj.height * imgScale)) / 2;
         gambarDiCanvas();
@@ -527,14 +489,9 @@
       gambarDiCanvas();
     }
 
-    // Fungsi interaksi sentuh / geser dibiarkan hidup jika suatu waktu tamu tidak sengaja mencubit layar
     const canvasContainer = document.getElementById('canvasContainer');
     function getTouchPos(e, index) { const rect = document.getElementById('canvasFrame').getBoundingClientRect(); const touch = e.touches ? e.touches[index] : e; return { x: touch.clientX - rect.left, y: touch.clientY - rect.top }; }
-    function startDrag(e) {
-      e.preventDefault(); isDragging = true;
-      if (e.touches && e.touches.length >= 2) { const p1 = getTouchPos(e, 0); const p2 = getTouchPos(e, 1); lastPinchDistance = Math.hypot(p1.x - p2.x, p1.y - p2.y); lastPointX = (p1.x + p2.x) / 2; lastPointY = (p1.y + p2.y) / 2;
-      } else { const p = getTouchPos(e, 0); lastPointX = p.x; lastPointY = p.y; lastPinchDistance = null; }
-    }
+    function startDrag(e) { e.preventDefault(); isDragging = true; if (e.touches && e.touches.length >= 2) { const p1 = getTouchPos(e, 0); const p2 = getTouchPos(e, 1); lastPinchDistance = Math.hypot(p1.x - p2.x, p1.y - p2.y); lastPointX = (p1.x + p2.x) / 2; lastPointY = (p1.y + p2.y) / 2; } else { const p = getTouchPos(e, 0); lastPointX = p.x; lastPointY = p.y; lastPinchDistance = null; } }
     function dragging(e) {
       if (!isDragging) return; e.preventDefault();
       if (e.touches && e.touches.length >= 2) {
