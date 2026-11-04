@@ -39,11 +39,8 @@
     .camera-polaroid-frame { width: 260px; height: 300px; margin: 0 auto 15px auto; background: #222; position: relative; overflow: hidden; border: 15px solid white; border-bottom: 50px solid white; box-shadow: 0 4px 10px rgba(0,0,0,0.2); border-radius: 2px; }
     #videoFeed { width: 100%; height: 100%; object-fit: cover; }
     
-    #canvasContainer { position: relative; width: 300px; height: 400px; margin: 0 auto 15px auto; box-shadow: 0 4px 8px rgba(0,0,0,0.2); background: white; cursor: grab; touch-action: none; }
-    #canvasContainer:active { cursor: grabbing; }
+    #canvasContainer { position: relative; width: 300px; height: 400px; margin: 0 auto 15px auto; box-shadow: 0 4px 8px rgba(0,0,0,0.2); background: white; }
     #canvasFrame { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
-    .zoom-controls { display: flex; justify-content: center; gap: 10px; margin-bottom: 15px; }
-    .btn-zoom { background-color: #ddd; color: #333; width: 40px; height: 40px; padding: 0; margin: 0; font-size: 20px; font-weight: bold; border-radius: 50%; }
     .loading { display: none; font-weight: bold; color: var(--accent-color); margin-top: 10px;}
     .iphone-warning { font-size: 11px; color: #d9534f; background: #fdf2f2; border: 1px solid #f5c6cb; padding: 10px; border-radius: 8px; margin-top: 10px; text-align: left; line-height: 1.4; }
 
@@ -134,13 +131,9 @@
     <div style="text-align: left;"><button onclick="kembaliPilihFoto()" class="btn-back">← Kembali Pilih Foto</button></div>
     
     <h3 style="color: var(--primary-color); margin-top: 0;">Sesuaikan Warna</h3>
-    <p style="font-size: 12px; margin-top: -10px;">Foto Anda sudah otomatis di posisi yang pas!</p>
+    <p style="font-size: 12px; margin-top: -10px;">Pilih filter yang diinginkan</p>
     
     <div id="canvasContainer"><canvas id="canvasFrame" width="300" height="400"></canvas></div>
-    <div class="zoom-controls" style="display: none;">
-      <button class="btn-zoom" onclick="aturZoom(-0.1)">-</button>
-      <button class="btn-zoom" onclick="aturZoom(0.1)">+</button>
-    </div>
 
     <div>
       <button id="btnPolaroid" class="btn-filter" onclick="terapkanFilter('polaroid')">Filter Polaroid</button>
@@ -169,7 +162,7 @@
     let videoStream = null; let facingMode = "user"; 
     
     let mediaRecorder, audioChunks = [], timeoutRekaman;
-    let imgObj = new Image(), imgScale = 1, imgX = 0, imgY = 0, isDragging = false, lastPinchDistance = null, lastPointX = null, lastPointY = null;
+    let imgObj = new Image(), imgScale = 1, imgX = 0, imgY = 0;
     const FRAME_X = 20, FRAME_Y = 20, FRAME_WIDTH = 260, FRAME_HEIGHT = 300;
 
     function gantiHalaman(idTujuan) {
@@ -257,10 +250,8 @@
       const video = document.getElementById('videoFeed');
       const btnPutar = document.getElementById('btnPutarKamera');
       
-      // Matikan sementara tombol putar agar tidak diklik dua kali oleh pengguna
       if(btnPutar) { btnPutar.disabled = true; btnPutar.innerText = "⏳..."; }
 
-      // Bersihkan layar dari kamera sebelumnya hingga tuntas
       if (videoStream) { 
         videoStream.getTracks().forEach(track => track.stop()); 
         videoStream = null; 
@@ -268,7 +259,6 @@
       video.srcObject = null;
 
       try {
-        // Minta resolusi tinggi secara paksa agar iOS tidak merender bingkai kotak/gepeng
         videoStream = await navigator.mediaDevices.getUserMedia({ 
           video: { facingMode: facingMode, width: { ideal: 1080 }, height: { ideal: 1920 } } 
         });
@@ -277,7 +267,6 @@
         video.style.transform = facingMode === "user" ? "scaleX(-1)" : "scaleX(1)";
         document.getElementById('fallbackKameraUpload').style.display = "none";
         
-        // Baru mainkan video KETIKA sistem sudah berhasil mendeteksi ukuran/rasio aslinya
         video.onloadedmetadata = () => {
           video.play().then(() => {
              if(btnPutar) { btnPutar.disabled = false; btnPutar.innerText = "🔄 Putar"; }
@@ -461,13 +450,12 @@
 
     function inisialisasiEditFoto() {
       imgObj.onload = () => {
+        // Skala dan posisi selalu terkunci di tengah secara statis
         const scaleX = FRAME_WIDTH / imgObj.width; const scaleY = FRAME_HEIGHT / imgObj.height; imgScale = Math.max(scaleX, scaleY); 
         imgX = FRAME_X + (FRAME_WIDTH - (imgObj.width * imgScale)) / 2; imgY = FRAME_Y + (FRAME_HEIGHT - (imgObj.height * imgScale)) / 2;
         gambarDiCanvas();
       }; imgObj.src = fotoTerpilih;
     }
-    
-    function aturZoom(delta) { imgScale += delta; if (imgScale < 0.2) imgScale = 0.2; gambarDiCanvas(); }
 
     function gambarDiCanvas() {
       const canvas = document.getElementById('canvasFrame'); const ctx = canvas.getContext('2d');
@@ -509,23 +497,6 @@
       else document.getElementById('btnNormal').classList.add('active-filter');
       gambarDiCanvas();
     }
-
-    const canvasContainer = document.getElementById('canvasContainer');
-    function getTouchPos(e, index) { const rect = document.getElementById('canvasFrame').getBoundingClientRect(); const touch = e.touches ? e.touches[index] : e; return { x: touch.clientX - rect.left, y: touch.clientY - rect.top }; }
-    function startDrag(e) { e.preventDefault(); isDragging = true; if (e.touches && e.touches.length >= 2) { const p1 = getTouchPos(e, 0); const p2 = getTouchPos(e, 1); lastPinchDistance = Math.hypot(p1.x - p2.x, p1.y - p2.y); lastPointX = (p1.x + p2.x) / 2; lastPointY = (p1.y + p2.y) / 2; } else { const p = getTouchPos(e, 0); lastPointX = p.x; lastPointY = p.y; lastPinchDistance = null; } }
-    function dragging(e) {
-      if (!isDragging) return; e.preventDefault();
-      if (e.touches && e.touches.length >= 2) {
-        const p1 = getTouchPos(e, 0); const p2 = getTouchPos(e, 1); const currentDist = Math.hypot(p1.x - p2.x, p1.y - p2.y); const currentPointX = (p1.x + p2.x) / 2; const currentPointY = (p1.y + p2.y) / 2;
-        imgX += (currentPointX - lastPointX); imgY += (currentPointY - lastPointY);
-        if (lastPinchDistance) { const pinchRatio = currentDist / lastPinchDistance; const prevScale = imgScale; imgScale *= pinchRatio; if (imgScale < 0.2) imgScale = 0.2; const actualRatio = imgScale / prevScale; imgX = currentPointX - (currentPointX - imgX) * actualRatio; imgY = currentPointY - (currentPointY - imgY) * actualRatio; }
-        lastPinchDistance = currentDist; lastPointX = currentPointX; lastPointY = currentPointY;
-      } else { const p = getTouchPos(e, 0); imgX += (p.x - lastPointX); imgY += (p.y - lastPointY); lastPointX = p.x; lastPointY = p.y; }
-      gambarDiCanvas(); 
-    }
-    function endDrag(e) { if (!e.touches || e.touches.length === 0) { isDragging = false; lastPinchDistance = null; } else if (e.touches.length === 1) { const p = getTouchPos(e, 0); lastPointX = p.x; lastPointY = p.y; lastPinchDistance = null; } }
-    canvasContainer.addEventListener('touchstart', startDrag, {passive: false}); canvasContainer.addEventListener('touchmove', dragging, {passive: false}); canvasContainer.addEventListener('touchend', endDrag);
-    canvasContainer.addEventListener('mousedown', startDrag); canvasContainer.addEventListener('mousemove', dragging); window.addEventListener('mouseup', endDrag); 
 
     function konfirmasiCetak() {
       const yakin = confirm("Kirim foto ini ke Galeri Live Feeds?");
