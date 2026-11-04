@@ -18,7 +18,7 @@
     .active { display: block; }
     
     input[type="text"] { width: 90%; padding: 15px; margin: 10px 0; border: 2px solid var(--primary-color); border-radius: 10px; font-family: 'Montserrat'; font-weight: 700; box-sizing: border-box; }
-    textarea { width: 90%; padding: 15px; margin: 10px 0; border: 2px solid var(--primary-color); border-radius: 10px; font-family: 'Montserrat'; font-weight: 500; resize: none; box-sizing: border-box; }
+    textarea { width: 100%; padding: 15px; margin: 10px 0; border: 2px solid var(--primary-color); border-radius: 10px; font-family: 'Montserrat'; font-weight: 500; resize: none; box-sizing: border-box; }
 
     button { background-color: var(--primary-color); color: white; border: none; padding: 15px 30px; margin: 10px 5px; border-radius: 25px; font-family: 'Montserrat'; font-weight: 700; cursor: pointer; width: 95%; box-shadow: 0 4px 6px rgba(0,0,0,0.1); transition: background-color 0.3s; }
     button:active { transform: scale(0.98); }
@@ -31,8 +31,8 @@
     input[type="file"] { display: none; }
     .btn-native { display: inline-block; background-color: var(--accent-color); color: white; padding: 15px 30px; margin: 10px 0; border-radius: 25px; font-family: 'Montserrat'; font-weight: 700; cursor: pointer; width: 80%; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
 
-    /* DESAIN TAB MENU BARU ALA APLIKASI */
-    .tab-nav { display: flex; background: #e0e0e0; border-radius: 30px; margin: 0 auto 20px auto; width: 95%; overflow: hidden; box-shadow: inset 0 2px 4px rgba(0,0,0,0.1); }
+    /* DESAIN TAB MENU (2 TAB SAJA UNTUK PESAN) */
+    .tab-nav { display: flex; background: #e0e0e0; border-radius: 30px; margin: 0 auto 15px auto; width: 100%; overflow: hidden; box-shadow: inset 0 2px 4px rgba(0,0,0,0.1); }
     .tab-btn { flex: 1; padding: 12px 0; font-size: 13px; font-weight: 700; color: #666; cursor: pointer; transition: all 0.3s; border: none; background: transparent; outline: none; margin: 0; border-radius: 30px; }
     .tab-btn.active { background: var(--primary-color); color: white; box-shadow: 0 2px 5px rgba(0,0,0,0.2); }
     .tab-pane { display: none; width: 100%; animation: slideIn 0.3s ease; }
@@ -101,71 +101,68 @@
     <button id="btnLogin" onclick="verifikasiLogin()">Lanjut</button>
   </div>
 
-  <!-- HALAMAN 2: CAMERA, VOICE, & TEXT (TAB SYSTEM) -->
+  <!-- HALAMAN 2: CAMERA & OPTIONAL TABS -->
   <div id="page2" class="page">
-    <h3 style="color: var(--primary-color); margin-bottom: 15px;">Bagikan Momenmu</h3>
+    <h3 style="color: var(--primary-color); margin-bottom: 5px;">Ambil Momenmu</h3>
+    <p style="font-size: 11px; margin-top: 0; margin-bottom: 15px;">Posisikan senyummu di dalam bingkai polaroid</p>
     
-    <!-- NAVIGATION TABS -->
-    <div class="tab-nav">
-      <button class="tab-btn active" onclick="bukaTab(event, 'tab-foto')">📸 Foto</button>
-      <button class="tab-btn" onclick="bukaTab(event, 'tab-teks')">✍️ Teks</button>
-      <button class="tab-btn" onclick="bukaTab(event, 'tab-suara')">🎙️ Suara</button>
+    <!-- BAGIAN 1: KAMERA SELALU TERBUKA DI ATAS -->
+    <div class="camera-polaroid-frame">
+      <video id="videoFeed" autoplay playsinline></video>
+      <canvas id="captureCanvas" width="260" height="300" style="display:none;"></canvas>
+      <div id="flashEffect"></div>
+    </div>
+    
+    <div style="display: flex; justify-content: center; gap: 10px; margin-bottom: 10px; width: 100%; max-width: 330px; margin: 0 auto;">
+      <button id="btnJepretWeb" onclick="jepretKameraWeb()" class="accent" style="flex: 2; margin: 0;">📸 Jepret (0/5)</button>
+      <button id="btnPutarKamera" onclick="gantiKamera()" style="flex: 1; margin: 0; background: #666; font-size: 13px;">🔄 Putar</button>
     </div>
 
-    <!-- TAB 1: FOTO -->
-    <div id="tab-foto" class="tab-pane active">
-      <p style="font-size: 11px; margin-top: 0; margin-bottom: 15px;">Posisikan senyummu di dalam bingkai polaroid</p>
-      
-      <div class="camera-polaroid-frame">
-        <video id="videoFeed" autoplay playsinline></video>
-        <canvas id="captureCanvas" width="260" height="300" style="display:none;"></canvas>
-        <div id="flashEffect"></div>
-      </div>
-      
-      <div style="display: flex; justify-content: center; gap: 10px; margin-bottom: 10px; width: 100%; max-width: 330px; margin: 0 auto;">
-        <button id="btnJepretWeb" onclick="jepretKameraWeb()" class="accent" style="flex: 2; margin: 0;">📸 Jepret (0/5)</button>
-        <button id="btnPutarKamera" onclick="gantiKamera()" style="flex: 1; margin: 0; background: #666; font-size: 13px;">🔄 Putar</button>
-      </div>
-
-      <div id="fallbackKameraUpload" style="display: none; margin-top: 15px;">
-        <label for="kameraNatif" class="btn-native" style="background-color: #444; width: 85%; font-size: 12px; padding: 10px;">⚠️ Gunakan Kamera Bawaan (Jika Error)</label>
-        <input type="file" id="kameraNatif" accept="image/*" capture="user" onchange="prosesFotoNatif(event)">
-      </div>
-
-      <div id="previewArea" class="photo-grid"></div>
+    <div id="fallbackKameraUpload" style="display: none; margin-top: 15px;">
+      <label for="kameraNatif" class="btn-native" style="background-color: #444; width: 85%; font-size: 12px; padding: 10px;">⚠️ Gunakan Kamera Bawaan (Jika Error)</label>
+      <input type="file" id="kameraNatif" accept="image/*" capture="user" onchange="prosesFotoNatif(event)">
     </div>
 
-    <!-- TAB 2: TEKS -->
-    <div id="tab-teks" class="tab-pane">
-      <p style="font-size: 12px; font-weight: bold; margin-bottom: 5px;">Tuliskan Pesan Indah Anda</p>
-      <p style="font-size: 11px; margin-top: 0; margin-bottom: 15px; color: #666;">Ucapan ini akan menempel pada foto Anda</p>
-      
-      <!-- Textarea diperbesar ukurannya agar lebih nyaman -->
-      <textarea id="inputPesan" placeholder="Ketik ucapan selamat, doa, atau candaan di sini..." rows="5" oninput="saveLokal()" style="height: 140px; font-size: 14px;"></textarea>
-    </div>
+    <div id="previewArea" class="photo-grid"></div>
+    
+    <hr style="border: 1px solid #ddd; margin: 10px 0; width: 100%;">
 
-    <!-- TAB 3: SUARA -->
-    <div id="tab-suara" class="tab-pane">
-      <p style="font-size: 12px; font-weight: bold; margin-bottom: 5px;">Kirimkan Suara Hatimu</p>
-      <p style="font-size: 11px; margin-top: 0; margin-bottom: 15px; color: #666;">Maksimal durasi 30 detik</p>
-      
-      <button id="btnRekam" onclick="toggleRekam()" style="width: 80%;">🎙️ Mulai Rekam</button>
-      
-      <div id="areaFallback" style="display: none; margin-top: 10px;">
-        <div class="iphone-warning">Ketuk tombol di bawah. Abaikan layar kamera jika terbuka.</div>
-        <label for="audioNatif" class="btn-native" style="background-color: var(--primary-color);">🎙️ Buka Perekam iPhone</label>
-        <input type="file" id="audioNatif" accept="audio/*" capture="microphone" onchange="prosesAudioNatif(event)">
+    <!-- BAGIAN 2: TAB PESAN OPSIONAL -->
+    <h3 style="color: var(--primary-color); margin-bottom: 15px; font-size: 16px;">Pesan Spesial (Opsional)</h3>
+    
+    <div style="width: 100%; max-width: 350px; margin: 0 auto;">
+      <!-- NAVIGATION TABS -->
+      <div class="tab-nav">
+        <button class="tab-btn active" onclick="bukaTab(event, 'tab-teks')">✍️ Teks</button>
+        <button class="tab-btn" onclick="bukaTab(event, 'tab-suara')">🎙️ Suara</button>
       </div>
 
-      <div id="audioContainer" style="display: none; align-items: center; flex-direction: column; margin-top: 15px;">
-        <audio id="audioPlayback" controls style="width:90%;"></audio>
-        <button class="btn-delete-audio" id="btnHapusAudio" onclick="hapusAudio()">🗑️ Hapus Rekaman</button>
+      <!-- TAB TEKS -->
+      <div id="tab-teks" class="tab-pane active">
+        <textarea id="inputPesan" placeholder="Ketik ucapan selamat, doa, atau kesan di sini..." rows="4" oninput="saveLokal()" style="height: 110px; font-size: 14px;"></textarea>
+      </div>
+
+      <!-- TAB SUARA -->
+      <div id="tab-suara" class="tab-pane">
+        <p style="font-size: 11px; margin-top: 0; margin-bottom: 10px; color: #666;">Maksimal durasi 30 detik</p>
+        <button id="btnRekam" onclick="toggleRekam()" style="width: 100%; margin: 0;">🎙️ Mulai Rekam</button>
+        
+        <div id="areaFallback" style="display: none; margin-top: 10px;">
+          <div class="iphone-warning">Ketuk tombol di bawah. Abaikan layar kamera jika terbuka.</div>
+          <label for="audioNatif" class="btn-native" style="background-color: var(--primary-color); width: 100%;">🎙️ Buka Perekam iPhone</label>
+          <input type="file" id="audioNatif" accept="audio/*" capture="microphone" onchange="prosesAudioNatif(event)">
+        </div>
+
+        <div id="audioContainer" style="display: none; align-items: center; flex-direction: column; margin-top: 15px;">
+          <audio id="audioPlayback" controls style="width:100%;"></audio>
+          <button class="btn-delete-audio" id="btnHapusAudio" onclick="hapusAudio()">🗑️ Hapus Rekaman</button>
+        </div>
       </div>
     </div>
 
     <hr style="border: 1px solid #ddd; margin: 20px 0; width: 100%;">
     
-    <!-- TOMBOL SIMPAN GLOBAL (Selalu terlihat di semua tab) -->
+    <!-- TOMBOL SIMPAN GLOBAL -->
     <button id="btnSimpanDrive" onclick="simpanKeDrive()">💾 Save (Simpan Semua)</button>
     <div id="loadingSave" class="loading">Mengirim ke server... Mohon tunggu.</div>
   </div>
@@ -216,7 +213,7 @@
     let imgObj = new Image(), imgScale = 1, imgX = 0, imgY = 0;
     const FRAME_X = 20, FRAME_Y = 20, FRAME_WIDTH = 260, FRAME_HEIGHT = 300;
 
-    // FUNGSI GANTI TAB PADA HALAMAN PENGAMBILAN
+    // FUNGSI GANTI TAB
     function bukaTab(evt, namaTab) {
       const isiTab = document.getElementsByClassName("tab-pane");
       for (let i = 0; i < isiTab.length; i++) { isiTab[i].classList.remove("active"); }
@@ -287,7 +284,7 @@
     }
 
     function batalkanSesi() {
-      if (arrayFoto.length > 0 || audioBase64) {
+      if (arrayFoto.length > 0 || audioBase64 || document.getElementById('inputPesan').value.trim() !== "") {
         const yakin = confirm("Anda memiliki memori yang belum tersimpan. Yakin ingin keluar?");
         if (!yakin) return;
       }
