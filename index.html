@@ -53,7 +53,11 @@
 
     #canvasContainer { position: relative; width: 300px; height: 400px; margin: 0 auto 15px auto; box-shadow: 0 4px 8px rgba(0,0,0,0.2); background: white; }
     #canvasFrame { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
-    .loading { display: none; font-weight: bold; color: var(--accent-color); margin-top: 10px;}
+    
+    /* GAYA BARU UNTUK LOADING YANG LEBIH ELEGAN */
+    .loading { display: none; font-weight: bold; color: var(--accent-color); margin-top: 15px; font-size: 13px; animation: pulse 1.5s infinite; }
+    @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
+    
     .iphone-warning { font-size: 11px; color: #d9534f; background: #fdf2f2; border: 1px solid #f5c6cb; padding: 10px; border-radius: 8px; margin-top: 10px; text-align: left; line-height: 1.4; }
 
     .feed-container { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; padding-top: 10px; }
@@ -78,16 +82,19 @@
 </head>
 <body onload="initApp()">
 
-  <!-- HALAMAN 0: LIVE FEEDS GALERI -->
+  <!-- HALAMAN 0: LIVE FEEDS GALERI DENGAN TOMBOL REFRESH BARU -->
   <div id="page0" class="page active" style="padding: 0;">
     <div style="position: sticky; top: 0; background: var(--bg-color); z-index: 10; padding: 15px 0; border-bottom: 1px solid #ddd;">
       <h2 style="color: var(--primary-color); font-weight: 900; margin: 0;">Live Feeds</h2>
       <p style="margin: 5px 0 15px 0; font-size: 12px;">Share & Listen to Memories</p>
-      <button onclick="gantiHalaman('page1')" class="accent" style="width: 100%; margin: 0;">📸 Take Photo</button>
+      
+      <div style="display: flex; justify-content: center; gap: 10px; margin-bottom: 5px; width: 100%; max-width: 330px; margin: 0 auto;">
+        <button onclick="gantiHalaman('page1')" class="accent" style="flex: 2; margin: 0;">📸 Take Photo</button>
+        <button onclick="muatFeeds(true)" style="flex: 1; margin: 0; background: #666; font-size: 13px;">🔄 Refresh</button>
+      </div>
     </div>
     
-    <!-- Teks Memuat kini diubah ikonnya agar lebih bagus -->
-    <div id="feedLoading" class="loading" style="display: none; margin-top: 20px; font-size: 13px;">⏳ Sedang menyinkronkan galeri...</div>
+    <div id="feedLoading" class="loading">⏳ Menyinkronkan foto terbaru...</div>
     <div id="feedGrid" class="feed-container"></div>
   </div>
 
@@ -158,7 +165,7 @@
     <hr style="border: 1px solid #ddd; margin: 20px 0; width: 100%;">
     
     <button id="btnSimpanDrive" onclick="simpanKeDrive()">💾 Save (Simpan Semua)</button>
-    <div id="loadingSave" class="loading">Mengirim ke server... Mohon tunggu.</div>
+    <div id="loadingSave" class="loading" style="animation: none;">Mengirim ke server... Mohon tunggu.</div>
   </div>
 
   <!-- HALAMAN 3: PILIH FOTO UNTUK DIPRINT -->
@@ -184,7 +191,7 @@
     </div>
     
     <button id="btnKonfirmasiCetak" onclick="konfirmasiCetak()" class="accent" style="margin-top: 15px;">Kirim Ke Live Feeds</button>
-    <div id="loadingPrint" class="loading">Memproses finalisasi...</div>
+    <div id="loadingPrint" class="loading" style="animation: none;">Memproses finalisasi...</div>
   </div>
 
   <!-- HALAMAN 5: THANK YOU -->
@@ -227,7 +234,7 @@
         savedAudioUrl: savedAudioUrl, fotoTerpilih: fotoTerpilih, 
         filterSaatIni: filterSaatIni, currentPage: pageActive
       };
-      try { localStorage.setItem('photoboothState', JSON.stringify(state)); } catch(e) { console.warn("Penyimpanan lokal sementara penuh."); }
+      try { localStorage.setItem('photoboothState', JSON.stringify(state)); } catch(e) {}
     }
 
     function clearLokal() { localStorage.removeItem('photoboothState'); }
@@ -326,15 +333,25 @@
       }
     }
 
-    function muatFeeds() {
+    // MODIFIKASI: Menambahkan parameter paksaan refresh (isForceRefresh)
+    function muatFeeds(isForceRefresh = false) {
       const loadingText = document.getElementById('feedLoading');
-      const cachedFeeds = localStorage.getItem('photoboothGalleryCache');
       
-      if (cachedFeeds) {
-        loadingText.style.display = 'none';
-        try { renderFeedData(JSON.parse(cachedFeeds)); } catch(e) {}
+      if (isForceRefresh) {
+        // Hapus cache, bersihkan layar, dan paksa tampilkan animasi loading
+        localStorage.removeItem('photoboothGalleryCache');
+        document.getElementById('feedGrid').innerHTML = "";
+        loadingText.style.display = 'block';
+        loadingText.innerText = "⏳ Menarik foto terbaru dari server...";
       } else {
-        loadingText.style.display = 'block'; 
+        // Tarik dari memori lokal terlebih dahulu jika tidak dipaksa refresh
+        const cachedFeeds = localStorage.getItem('photoboothGalleryCache');
+        if (cachedFeeds) {
+          loadingText.style.display = 'none';
+          try { renderFeedData(JSON.parse(cachedFeeds)); } catch(e) {}
+        } else {
+          loadingText.style.display = 'block'; 
+        }
       }
 
       const fetchUrl = API_URL + "?timestamp=" + new Date().getTime();
@@ -345,14 +362,16 @@
           try {
             const cacheData = data.data.slice(0, 10);
             localStorage.setItem('photoboothGalleryCache', JSON.stringify(cacheData));
-          } catch(e) { console.warn("Memori cache kepenuhan."); }
+          } catch(e) {}
           loadingText.style.display = 'none';
           renderFeedData(data.data); 
         } else {
-          if(!cachedFeeds) document.getElementById('feedGrid').innerHTML = "<p style='grid-column: span 2; text-align: center; color: #888;'>Belum ada foto. Jadilah yang pertama!</p>";
+          if(!localStorage.getItem('photoboothGalleryCache')) {
+             document.getElementById('feedGrid').innerHTML = "<p style='grid-column: span 2; text-align: center; color: #888;'>Belum ada foto. Jadilah yang pertama!</p>";
+          }
         }
       }).catch(err => { 
-        if(!cachedFeeds) {
+        if(!localStorage.getItem('photoboothGalleryCache')) {
           loadingText.style.display = 'block';
           loadingText.innerText = "Gagal memuat galeri."; 
         }
@@ -654,14 +673,10 @@
           if(data.status === "success") {
             document.getElementById('loadingPrint').style.display = 'none'; 
             document.getElementById('btnKonfirmasiCetak').disabled = false; document.getElementById('btnKonfirmasiCetak').innerText = "Kirim Ke Live Feeds";
-            clearLokal();
+            clearLokal(); localStorage.removeItem('photoboothGalleryCache');
             namaUser = ""; kuponUser = ""; arrayFoto = []; audioBase64 = null; savedAudioUrl = ""; fotoTerpilih = null; filterSaatIni = "normal";
             document.getElementById('inputNama').value = ""; document.getElementById('inputKupon').value = ""; document.getElementById('inputPesan').value = "";
-            gantiHalaman('page0'); 
-            
-            // PERBAIKAN: Menghapus cache lokal agar saat upload foto baru, galeri merender ulang foto yang benar-benar terbaru dari server
-            localStorage.removeItem('photoboothGalleryCache');
-            muatFeeds(); 
+            gantiHalaman('page0'); muatFeeds(true); 
           } else { throw new Error(data.message); }
         }).catch(error => {
           alert("Gagal memproses pengiriman: " + error.message);
