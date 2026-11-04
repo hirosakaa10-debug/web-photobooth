@@ -28,9 +28,16 @@
 
     .btn-filter { width: 40%; padding: 12px 10px; font-size: 12px; transition: all 0.3s ease; }
     .btn-filter.active-filter { background-color: var(--accent-color); border: 2px solid white; transform: scale(1.05); }
-
     input[type="file"] { display: none; }
     .btn-native { display: inline-block; background-color: var(--accent-color); color: white; padding: 15px 30px; margin: 10px 0; border-radius: 25px; font-family: 'Montserrat'; font-weight: 700; cursor: pointer; width: 80%; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+
+    /* DESAIN TAB MENU BARU ALA APLIKASI */
+    .tab-nav { display: flex; background: #e0e0e0; border-radius: 30px; margin: 0 auto 20px auto; width: 95%; overflow: hidden; box-shadow: inset 0 2px 4px rgba(0,0,0,0.1); }
+    .tab-btn { flex: 1; padding: 12px 0; font-size: 13px; font-weight: 700; color: #666; cursor: pointer; transition: all 0.3s; border: none; background: transparent; outline: none; margin: 0; border-radius: 30px; }
+    .tab-btn.active { background: var(--primary-color); color: white; box-shadow: 0 2px 5px rgba(0,0,0,0.2); }
+    .tab-pane { display: none; width: 100%; animation: slideIn 0.3s ease; }
+    .tab-pane.active { display: block; }
+    @keyframes slideIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
     .photo-grid { display: flex; gap: 15px; overflow-x: auto; margin-top: 10px; margin-bottom: 10px; padding: 15px 10px; }
     .photo-wrapper { position: relative; display: inline-block; }
@@ -50,7 +57,7 @@
     .loading { display: none; font-weight: bold; color: var(--accent-color); margin-top: 10px;}
     .iphone-warning { font-size: 11px; color: #d9534f; background: #fdf2f2; border: 1px solid #f5c6cb; padding: 10px; border-radius: 8px; margin-top: 10px; text-align: left; line-height: 1.4; }
 
-    /* DESAIN GALERI LIVE FEEDS DENGAN FITUR EXPAND (BACA SELENGKAPNYA) */
+    /* DESAIN GALERI LIVE FEEDS */
     .feed-container { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; padding-top: 10px; }
     .feed-card { position: relative; border-radius: 12px; overflow: hidden; background: #222; aspect-ratio: 3/4; box-shadow: 0 4px 10px rgba(0,0,0,0.15); }
     .feed-card img { width: 100%; height: 100%; object-fit: cover; }
@@ -58,32 +65,14 @@
     .feed-name { color: white; font-weight: bold; font-size: 13px; text-shadow: 1px 1px 3px rgba(0,0,0,0.8); text-align: left; }
     
     .feed-message {
-      color: rgba(255, 255, 255, 0.9);
-      font-size: 10px;
-      font-style: italic;
-      margin-top: 5px;
-      border-left: 2px solid #FFC107;
-      padding-left: 6px;
-      text-align: left;
-      display: -webkit-box;
-      -webkit-line-clamp: 2; /* Otomatis terpotong 2 baris */
-      -webkit-box-orient: vertical;
-      overflow: hidden;
-      line-height: 1.3;
-      cursor: pointer; /* Memberikan isyarat bisa diklik */
-      transition: all 0.2s ease;
-      position: relative;
-      z-index: 2;
+      color: rgba(255, 255, 255, 0.9); font-size: 10px; font-style: italic; margin-top: 5px;
+      border-left: 2px solid #FFC107; padding-left: 6px; text-align: left; display: -webkit-box;
+      -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; line-height: 1.3;
+      cursor: pointer; transition: all 0.2s ease; position: relative; z-index: 2;
     }
-
-    /* KELAS CSS BARU SAAT TEKS DIKLIK (Mode Terbuka ala Reels) */
     .feed-message.expanded {
-      -webkit-line-clamp: unset; /* Lepaskan batas baris */
-      background: rgba(0, 0, 0, 0.75); /* Gelapkan latar agar mudah dibaca */
-      padding: 8px;
-      border-radius: 0 6px 6px 0;
-      border-left: 3px solid #FFC107;
-      margin-left: -2px; /* Penyesuaian karena ditambah padding */
+      -webkit-line-clamp: unset; background: rgba(0, 0, 0, 0.75); padding: 8px;
+      border-radius: 0 6px 6px 0; border-left: 3px solid #FFC107; margin-left: -2px; 
     }
 
     .btn-play { background: rgba(255,255,255,0.25); border: 1px solid rgba(255,255,255,0.5); backdrop-filter: blur(4px); border-radius: 50%; width: 32px; height: 32px; display: flex; justify-content: center; align-items: center; cursor: pointer; color: white; font-size: 14px; flex-shrink: 0; }
@@ -112,50 +101,71 @@
     <button id="btnLogin" onclick="verifikasiLogin()">Lanjut</button>
   </div>
 
-  <!-- HALAMAN 2: CAMERA, VOICE, & TEXT -->
+  <!-- HALAMAN 2: CAMERA, VOICE, & TEXT (TAB SYSTEM) -->
   <div id="page2" class="page">
-    <h3 style="color: var(--primary-color); margin-bottom: 5px;">Ambil Momenmu</h3>
-    <p style="font-size: 11px; margin-top: 0; margin-bottom: 15px;">Posisikan senyummu di dalam bingkai polaroid</p>
+    <h3 style="color: var(--primary-color); margin-bottom: 15px;">Bagikan Momenmu</h3>
     
-    <div class="camera-polaroid-frame">
-      <video id="videoFeed" autoplay playsinline></video>
-      <canvas id="captureCanvas" width="260" height="300" style="display:none;"></canvas>
-      <div id="flashEffect"></div>
-    </div>
-    
-    <div style="display: flex; justify-content: center; gap: 10px; margin-bottom: 10px; width: 100%; max-width: 330px; margin: 0 auto;">
-      <button id="btnJepretWeb" onclick="jepretKameraWeb()" class="accent" style="flex: 2; margin: 0;">📸 Jepret (0/5)</button>
-      <button id="btnPutarKamera" onclick="gantiKamera()" style="flex: 1; margin: 0; background: #666; font-size: 13px;">🔄 Putar</button>
+    <!-- NAVIGATION TABS -->
+    <div class="tab-nav">
+      <button class="tab-btn active" onclick="bukaTab(event, 'tab-foto')">📸 Foto</button>
+      <button class="tab-btn" onclick="bukaTab(event, 'tab-teks')">✍️ Teks</button>
+      <button class="tab-btn" onclick="bukaTab(event, 'tab-suara')">🎙️ Suara</button>
     </div>
 
-    <div id="fallbackKameraUpload" style="display: none; margin-top: 15px;">
-      <label for="kameraNatif" class="btn-native" style="background-color: #444; width: 85%; font-size: 12px; padding: 10px;">⚠️ Gunakan Kamera Bawaan (Jika Error)</label>
-      <input type="file" id="kameraNatif" accept="image/*" capture="user" onchange="prosesFotoNatif(event)">
+    <!-- TAB 1: FOTO -->
+    <div id="tab-foto" class="tab-pane active">
+      <p style="font-size: 11px; margin-top: 0; margin-bottom: 15px;">Posisikan senyummu di dalam bingkai polaroid</p>
+      
+      <div class="camera-polaroid-frame">
+        <video id="videoFeed" autoplay playsinline></video>
+        <canvas id="captureCanvas" width="260" height="300" style="display:none;"></canvas>
+        <div id="flashEffect"></div>
+      </div>
+      
+      <div style="display: flex; justify-content: center; gap: 10px; margin-bottom: 10px; width: 100%; max-width: 330px; margin: 0 auto;">
+        <button id="btnJepretWeb" onclick="jepretKameraWeb()" class="accent" style="flex: 2; margin: 0;">📸 Jepret (0/5)</button>
+        <button id="btnPutarKamera" onclick="gantiKamera()" style="flex: 1; margin: 0; background: #666; font-size: 13px;">🔄 Putar</button>
+      </div>
+
+      <div id="fallbackKameraUpload" style="display: none; margin-top: 15px;">
+        <label for="kameraNatif" class="btn-native" style="background-color: #444; width: 85%; font-size: 12px; padding: 10px;">⚠️ Gunakan Kamera Bawaan (Jika Error)</label>
+        <input type="file" id="kameraNatif" accept="image/*" capture="user" onchange="prosesFotoNatif(event)">
+      </div>
+
+      <div id="previewArea" class="photo-grid"></div>
     </div>
 
-    <div id="previewArea" class="photo-grid"></div>
-    
-    <hr style="border: 1px solid #ddd; margin: 20px 0;">
-    
-    <h3 style="color: var(--primary-color); margin-bottom: 0;">Pesan Singkat (Opsional)</h3>
-    <textarea id="inputPesan" placeholder="Tulis ucapan selamat atau kesan pesan di sini..." rows="2" oninput="saveLokal()"></textarea>
-
-    <h3 style="color: var(--primary-color); margin-bottom: 0; margin-top: 15px;">Pesan Suara (Opsional)</h3>
-    <p style="font-size: 12px; margin-top: 0;">Maksimal 30 Detik</p>
-    <button id="btnRekam" onclick="toggleRekam()">🎙️ Mulai Rekam</button>
-    
-    <div id="areaFallback" style="display: none; margin-top: 10px;">
-      <div class="iphone-warning">Ketuk tombol di bawah. Abaikan layar kamera jika terbuka.</div>
-      <label for="audioNatif" class="btn-native" style="background-color: var(--primary-color);">🎙️ Buka Perekam iPhone</label>
-      <input type="file" id="audioNatif" accept="audio/*" capture="microphone" onchange="prosesAudioNatif(event)">
+    <!-- TAB 2: TEKS -->
+    <div id="tab-teks" class="tab-pane">
+      <p style="font-size: 12px; font-weight: bold; margin-bottom: 5px;">Tuliskan Pesan Indah Anda</p>
+      <p style="font-size: 11px; margin-top: 0; margin-bottom: 15px; color: #666;">Ucapan ini akan menempel pada foto Anda</p>
+      
+      <!-- Textarea diperbesar ukurannya agar lebih nyaman -->
+      <textarea id="inputPesan" placeholder="Ketik ucapan selamat, doa, atau candaan di sini..." rows="5" oninput="saveLokal()" style="height: 140px; font-size: 14px;"></textarea>
     </div>
 
-    <div id="audioContainer" style="display: none; align-items: center; flex-direction: column; margin-top: 10px;">
-      <audio id="audioPlayback" controls style="width:100%;"></audio>
-      <button class="btn-delete-audio" id="btnHapusAudio" onclick="hapusAudio()">🗑️ Hapus Rekaman</button>
+    <!-- TAB 3: SUARA -->
+    <div id="tab-suara" class="tab-pane">
+      <p style="font-size: 12px; font-weight: bold; margin-bottom: 5px;">Kirimkan Suara Hatimu</p>
+      <p style="font-size: 11px; margin-top: 0; margin-bottom: 15px; color: #666;">Maksimal durasi 30 detik</p>
+      
+      <button id="btnRekam" onclick="toggleRekam()" style="width: 80%;">🎙️ Mulai Rekam</button>
+      
+      <div id="areaFallback" style="display: none; margin-top: 10px;">
+        <div class="iphone-warning">Ketuk tombol di bawah. Abaikan layar kamera jika terbuka.</div>
+        <label for="audioNatif" class="btn-native" style="background-color: var(--primary-color);">🎙️ Buka Perekam iPhone</label>
+        <input type="file" id="audioNatif" accept="audio/*" capture="microphone" onchange="prosesAudioNatif(event)">
+      </div>
+
+      <div id="audioContainer" style="display: none; align-items: center; flex-direction: column; margin-top: 15px;">
+        <audio id="audioPlayback" controls style="width:90%;"></audio>
+        <button class="btn-delete-audio" id="btnHapusAudio" onclick="hapusAudio()">🗑️ Hapus Rekaman</button>
+      </div>
     </div>
+
+    <hr style="border: 1px solid #ddd; margin: 20px 0; width: 100%;">
     
-    <hr style="border: 1px solid #ddd; margin: 20px 0;">
+    <!-- TOMBOL SIMPAN GLOBAL (Selalu terlihat di semua tab) -->
     <button id="btnSimpanDrive" onclick="simpanKeDrive()">💾 Save (Simpan Semua)</button>
     <div id="loadingSave" class="loading">Mengirim ke server... Mohon tunggu.</div>
   </div>
@@ -206,6 +216,18 @@
     let imgObj = new Image(), imgScale = 1, imgX = 0, imgY = 0;
     const FRAME_X = 20, FRAME_Y = 20, FRAME_WIDTH = 260, FRAME_HEIGHT = 300;
 
+    // FUNGSI GANTI TAB PADA HALAMAN PENGAMBILAN
+    function bukaTab(evt, namaTab) {
+      const isiTab = document.getElementsByClassName("tab-pane");
+      for (let i = 0; i < isiTab.length; i++) { isiTab[i].classList.remove("active"); }
+      
+      const tombolTab = document.getElementsByClassName("tab-btn");
+      for (let i = 0; i < tombolTab.length; i++) { tombolTab[i].classList.remove("active"); }
+      
+      document.getElementById(namaTab).classList.add("active");
+      evt.currentTarget.classList.add("active");
+    }
+
     // =========================================================================
     // FITUR ANTI REFRESH (Penyimpanan Local Storage)
     // =========================================================================
@@ -237,15 +259,9 @@
         try {
           const state = JSON.parse(saved);
           if (state.currentPage && state.currentPage !== 'page0' && state.currentPage !== 'page5') {
-            namaUser = state.namaUser || "";
-            kuponUser = state.kuponUser || "";
-            let pesanUser = state.pesanUser || "";
-            
-            arrayFoto = state.arrayFoto || [];
-            audioBase64 = state.audioBase64 || null;
-            savedAudioUrl = state.savedAudioUrl || "";
-            fotoTerpilih = state.fotoTerpilih || null;
-            filterSaatIni = state.filterSaatIni || "normal";
+            namaUser = state.namaUser || ""; kuponUser = state.kuponUser || ""; let pesanUser = state.pesanUser || "";
+            arrayFoto = state.arrayFoto || []; audioBase64 = state.audioBase64 || null; savedAudioUrl = state.savedAudioUrl || "";
+            fotoTerpilih = state.fotoTerpilih || null; filterSaatIni = state.filterSaatIni || "normal";
             
             document.getElementById('inputNama').value = namaUser;
             document.getElementById('inputKupon').value = kuponUser;
@@ -260,14 +276,9 @@
               document.getElementById('btnHapusAudio').style.display = 'block';
             }
             
-            if (state.currentPage === 'page2') {
-              mulaiKamera();
-            } else if (state.currentPage === 'page3') {
-              siapkanHalamanPrintLokal();
-            } else if (state.currentPage === 'page4') {
-              terapkanFilter(filterSaatIni);
-              inisialisasiEditFoto();
-            }
+            if (state.currentPage === 'page2') { mulaiKamera(); } 
+            else if (state.currentPage === 'page3') { siapkanHalamanPrintLokal(); } 
+            else if (state.currentPage === 'page4') { terapkanFilter(filterSaatIni); inisialisasiEditFoto(); }
             isResuming = true;
           }
         } catch (e) { console.error(e); }
@@ -296,11 +307,8 @@
     // FUNGSI GLOBAL KLIK UNTUK MENUTUP TEKS "BACA SELENGKAPNYA"
     // =========================================================================
     document.addEventListener('click', function(e) {
-      // Jika tamu mengeklik area di luar teks pesan (dan bukan tombol play audio), tutup semua teks yang memanjang
       if(!e.target.classList.contains('feed-message') && !e.target.classList.contains('btn-play')) {
-        document.querySelectorAll('.feed-message.expanded').forEach(el => {
-          el.classList.remove('expanded');
-        });
+        document.querySelectorAll('.feed-message.expanded').forEach(el => { el.classList.remove('expanded'); });
       }
     });
 
@@ -322,32 +330,18 @@
             const overlay = document.createElement('div'); overlay.className = 'feed-overlay';
             
             const textContainer = document.createElement('div');
-            textContainer.style.flex = "1";
-            textContainer.style.paddingRight = "10px";
-            textContainer.style.overflow = "hidden"; // Menghindari teks bocor keluar
+            textContainer.style.flex = "1"; textContainer.style.paddingRight = "10px"; textContainer.style.overflow = "hidden"; 
 
             const nameObj = document.createElement('div'); nameObj.className = 'feed-name'; nameObj.innerText = item.nama;
             textContainer.appendChild(nameObj);
 
-            // Logika Expand Text (Baca Selengkapnya)
             if(item.pesan) {
-              const msgObj = document.createElement('div'); 
-              msgObj.className = 'feed-message'; 
-              msgObj.innerText = '"' + item.pesan + '"';
-              
-              // Event saat Teks ditekan
+              const msgObj = document.createElement('div'); msgObj.className = 'feed-message'; msgObj.innerText = '"' + item.pesan + '"';
               msgObj.onclick = function(e) {
-                e.stopPropagation(); // Mencegah klik bocor ke background
-                
-                // Tutup pesan lain yang mungkin sedang terbuka agar tidak berantakan
-                document.querySelectorAll('.feed-message.expanded').forEach(el => {
-                  if(el !== msgObj) el.classList.remove('expanded');
-                });
-                
-                // Buka atau tutup pesan ini
+                e.stopPropagation(); 
+                document.querySelectorAll('.feed-message.expanded').forEach(el => { if(el !== msgObj) el.classList.remove('expanded'); });
                 msgObj.classList.toggle('expanded');
               };
-
               textContainer.appendChild(msgObj);
             }
             
