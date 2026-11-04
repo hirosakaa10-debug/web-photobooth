@@ -31,7 +31,6 @@
     input[type="file"] { display: none; }
     .btn-native { display: inline-block; background-color: var(--accent-color); color: white; padding: 15px 30px; margin: 10px 0; border-radius: 25px; font-family: 'Montserrat'; font-weight: 700; cursor: pointer; width: 80%; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
 
-    /* DESAIN TAB MENU (2 TAB SAJA UNTUK PESAN) */
     .tab-nav { display: flex; background: #e0e0e0; border-radius: 30px; margin: 0 auto 15px auto; width: 100%; overflow: hidden; box-shadow: inset 0 2px 4px rgba(0,0,0,0.1); }
     .tab-btn { flex: 1; padding: 12px 0; font-size: 13px; font-weight: 700; color: #666; cursor: pointer; transition: all 0.3s; border: none; background: transparent; outline: none; margin: 0; border-radius: 30px; }
     .tab-btn.active { background: var(--primary-color); color: white; box-shadow: 0 2px 5px rgba(0,0,0,0.2); }
@@ -57,7 +56,6 @@
     .loading { display: none; font-weight: bold; color: var(--accent-color); margin-top: 10px;}
     .iphone-warning { font-size: 11px; color: #d9534f; background: #fdf2f2; border: 1px solid #f5c6cb; padding: 10px; border-radius: 8px; margin-top: 10px; text-align: left; line-height: 1.4; }
 
-    /* DESAIN GALERI LIVE FEEDS */
     .feed-container { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; padding-top: 10px; }
     .feed-card { position: relative; border-radius: 12px; overflow: hidden; background: #222; aspect-ratio: 3/4; box-shadow: 0 4px 10px rgba(0,0,0,0.15); }
     .feed-card img { width: 100%; height: 100%; object-fit: cover; }
@@ -106,7 +104,6 @@
     <h3 style="color: var(--primary-color); margin-bottom: 5px;">Ambil Momenmu</h3>
     <p style="font-size: 11px; margin-top: 0; margin-bottom: 15px;">Posisikan senyummu di dalam bingkai polaroid</p>
     
-    <!-- BAGIAN 1: KAMERA SELALU TERBUKA DI ATAS -->
     <div class="camera-polaroid-frame">
       <video id="videoFeed" autoplay playsinline></video>
       <canvas id="captureCanvas" width="260" height="300" style="display:none;"></canvas>
@@ -131,18 +128,15 @@
     <h3 style="color: var(--primary-color); margin-bottom: 15px; font-size: 16px;">Pesan Spesial (Opsional)</h3>
     
     <div style="width: 100%; max-width: 350px; margin: 0 auto;">
-      <!-- NAVIGATION TABS -->
       <div class="tab-nav">
         <button class="tab-btn active" onclick="bukaTab(event, 'tab-teks')">✍️ Teks</button>
         <button class="tab-btn" onclick="bukaTab(event, 'tab-suara')">🎙️ Suara</button>
       </div>
 
-      <!-- TAB TEKS -->
       <div id="tab-teks" class="tab-pane active">
         <textarea id="inputPesan" placeholder="Ketik ucapan selamat, doa, atau kesan di sini..." rows="4" oninput="saveLokal()" style="height: 110px; font-size: 14px;"></textarea>
       </div>
 
-      <!-- TAB SUARA -->
       <div id="tab-suara" class="tab-pane">
         <p style="font-size: 11px; margin-top: 0; margin-bottom: 10px; color: #666;">Maksimal durasi 30 detik</p>
         <button id="btnRekam" onclick="toggleRekam()" style="width: 100%; margin: 0;">🎙️ Mulai Rekam</button>
@@ -154,7 +148,7 @@
         </div>
 
         <div id="audioContainer" style="display: none; align-items: center; flex-direction: column; margin-top: 15px;">
-          <audio id="audioPlayback" controls style="width:100%;"></audio>
+          <audio id="audioPlayback" controls style="width:90%;"></audio>
           <button class="btn-delete-audio" id="btnHapusAudio" onclick="hapusAudio()">🗑️ Hapus Rekaman</button>
         </div>
       </div>
@@ -162,7 +156,6 @@
 
     <hr style="border: 1px solid #ddd; margin: 20px 0; width: 100%;">
     
-    <!-- TOMBOL SIMPAN GLOBAL -->
     <button id="btnSimpanDrive" onclick="simpanKeDrive()">💾 Save (Simpan Semua)</button>
     <div id="loadingSave" class="loading">Mengirim ke server... Mohon tunggu.</div>
   </div>
@@ -213,7 +206,6 @@
     let imgObj = new Image(), imgScale = 1, imgX = 0, imgY = 0;
     const FRAME_X = 20, FRAME_Y = 20, FRAME_WIDTH = 260, FRAME_HEIGHT = 300;
 
-    // FUNGSI GANTI TAB
     function bukaTab(evt, namaTab) {
       const isiTab = document.getElementsByClassName("tab-pane");
       for (let i = 0; i < isiTab.length; i++) { isiTab[i].classList.remove("active"); }
@@ -225,9 +217,6 @@
       evt.currentTarget.classList.add("active");
     }
 
-    // =========================================================================
-    // FITUR ANTI REFRESH (Penyimpanan Local Storage)
-    // =========================================================================
     function saveLokal() {
       const pageActive = document.querySelector('.page.active').id;
       if (pageActive === 'page0' || pageActive === 'page5') return;
@@ -300,9 +289,6 @@
       window.scrollTo(0,0); saveLokal(); 
     }
 
-    // =========================================================================
-    // FUNGSI GLOBAL KLIK UNTUK MENUTUP TEKS "BACA SELENGKAPNYA"
-    // =========================================================================
     document.addEventListener('click', function(e) {
       if(!e.target.classList.contains('feed-message') && !e.target.classList.contains('btn-play')) {
         document.querySelectorAll('.feed-message.expanded').forEach(el => { el.classList.remove('expanded'); });
@@ -382,8 +368,13 @@
       if(btnPutar) { btnPutar.disabled = true; btnPutar.innerText = "⏳..."; }
       if (videoStream) { videoStream.getTracks().forEach(track => track.stop()); videoStream = null; }
       video.srcObject = null;
+      
       try {
-        videoStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: facingMode, width: { ideal: 1080 }, height: { ideal: 1920 } } });
+        // PERBAIKAN: Meminta rasio asli sensor iPhone (4:3) untuk menghindari hardware crop / nge-zoom
+        videoStream = await navigator.mediaDevices.getUserMedia({ 
+          video: { facingMode: facingMode, width: { ideal: 1280 }, height: { ideal: 960 } } 
+        });
+        
         video.srcObject = videoStream; video.style.transform = facingMode === "user" ? "scaleX(-1)" : "scaleX(1)";
         document.getElementById('fallbackKameraUpload').style.display = "none";
         video.onloadedmetadata = () => {
@@ -419,11 +410,14 @@
       const targetWidth = canvas.width; const targetHeight = canvas.height;  
       const videoRatio = video.videoWidth / video.videoHeight; const targetRatio = targetWidth / targetHeight;
       let drawWidth, drawHeight, startX, startY;
+      
+      // Auto crop logika akan memotong otomatis bagian tengah dari input 4:3 yang lebar agar pas ke bingkai Polaroid
       if (videoRatio > targetRatio) {
         drawHeight = targetHeight; drawWidth = video.videoWidth * (targetHeight / video.videoHeight); startX = (targetWidth - drawWidth) / 2; startY = 0;
       } else {
         drawWidth = targetWidth; drawHeight = video.videoHeight * (targetWidth / video.videoWidth); startX = 0; startY = (targetHeight - drawHeight) / 2;
       }
+      
       ctx.save();
       if (facingMode === "user") { ctx.translate(targetWidth, 0); ctx.scale(-1, 1); }
       ctx.fillStyle = "white"; ctx.fillRect(0,0,targetWidth,targetHeight);
@@ -545,7 +539,7 @@
       const btnSave = document.getElementById('btnSimpanDrive'); btnSave.disabled = true; btnSave.innerText = "Menyimpan... Mohon Tunggu";
       document.getElementById('loadingSave').style.display = 'block';
       
-      const payload = { nama: namaUser, kupon: kuponUser, photos: arrayFoto, audio: audioBase64 };
+      const payload = { nama: namaUser, kupon: kuponUser, photos: arrayFoto, audio: audioBase64, pesan: pesanTeks };
       fetch(API_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'text/plain;charset=utf-8' },
