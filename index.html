@@ -32,8 +32,6 @@
     .photo-grid { display: flex; gap: 10px; overflow-x: auto; margin-top: 15px; margin-bottom: 15px; padding-bottom: 10px; }
     .photo-wrapper { position: relative; display: inline-block; }
     .photo-wrapper img { width: 60px; height: 80px; object-fit: cover; border-radius: 5px; border: 2px solid transparent; }
-    
-    /* DESAIN TOMBOL HAPUS */
     .btn-delete { position: absolute; top: -8px; right: -8px; background-color: red; color: white; border: none; border-radius: 50%; width: 24px; height: 24px; font-size: 12px; font-weight: bold; cursor: pointer; display: flex; justify-content: center; align-items: center; padding: 0; margin: 0; box-shadow: 0 2px 4px rgba(0,0,0,0.3); transition: background-color 0.2s; }
     
     .btn-delete-audio { background-color: transparent; color: red; border: 2px solid red; padding: 10px 20px; margin-top: 10px; border-radius: 20px; cursor: pointer; font-family: 'Montserrat'; font-weight: bold; display: none; width: auto; }
@@ -93,7 +91,7 @@
     
     <div style="display: flex; justify-content: center; gap: 10px; margin-bottom: 10px; width: 100%; max-width: 330px; margin: 0 auto;">
       <button id="btnJepretWeb" onclick="jepretKameraWeb()" class="accent" style="flex: 2; margin: 0;">📸 Jepret (<span id="countFoto">0</span>/5)</button>
-      <button onclick="gantiKamera()" style="flex: 1; margin: 0; background: #666; font-size: 13px;">🔄 Putar</button>
+      <button id="btnPutarKamera" onclick="gantiKamera()" style="flex: 1; margin: 0; background: #666; font-size: 13px;">🔄 Putar</button>
     </div>
 
     <div id="fallbackKameraUpload" style="display: none; margin-top: 15px;">
@@ -193,7 +191,6 @@
     }
 
     function muatFeeds() {
-      // PERBAIKAN: Menambahkan timestamp agar Safari tidak menggunakan cache (Anti Halaman Bisu)
       const fetchUrl = API_URL + "?timestamp=" + new Date().getTime();
       
       fetch(fetchUrl, {
@@ -257,15 +254,41 @@
     // LOGIKA KAMERA & PENGELOLAAN FOTO
     // =========================================================================
     async function mulaiKamera() {
-      if (videoStream) { videoStream.getTracks().forEach(track => track.stop()); }
+      const video = document.getElementById('videoFeed');
+      const btnPutar = document.getElementById('btnPutarKamera');
+      
+      // Matikan sementara tombol putar agar tidak diklik dua kali oleh pengguna
+      if(btnPutar) { btnPutar.disabled = true; btnPutar.innerText = "⏳..."; }
+
+      // Bersihkan layar dari kamera sebelumnya hingga tuntas
+      if (videoStream) { 
+        videoStream.getTracks().forEach(track => track.stop()); 
+        videoStream = null; 
+      }
+      video.srcObject = null;
+
       try {
-        videoStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: facingMode } });
-        const video = document.getElementById('videoFeed'); video.srcObject = videoStream;
+        // Minta resolusi tinggi secara paksa agar iOS tidak merender bingkai kotak/gepeng
+        videoStream = await navigator.mediaDevices.getUserMedia({ 
+          video: { facingMode: facingMode, width: { ideal: 1080 }, height: { ideal: 1920 } } 
+        });
+        
+        video.srcObject = videoStream;
         video.style.transform = facingMode === "user" ? "scaleX(-1)" : "scaleX(1)";
         document.getElementById('fallbackKameraUpload').style.display = "none";
+        
+        // Baru mainkan video KETIKA sistem sudah berhasil mendeteksi ukuran/rasio aslinya
+        video.onloadedmetadata = () => {
+          video.play().then(() => {
+             if(btnPutar) { btnPutar.disabled = false; btnPutar.innerText = "🔄 Putar"; }
+          }).catch(e => {
+             if(btnPutar) { btnPutar.disabled = false; btnPutar.innerText = "🔄 Putar"; }
+          });
+        };
       } catch (err) {
         console.error("Kamera diblokir/error:", err);
         document.getElementById('fallbackKameraUpload').style.display = "block";
+        if(btnPutar) { btnPutar.disabled = false; btnPutar.innerText = "🔄 Putar"; }
       }
     }
 
@@ -311,14 +334,13 @@
         const imgEl = document.createElement('img'); imgEl.src = src;
         const btnDelete = document.createElement('button'); btnDelete.className = 'btn-delete'; btnDelete.innerHTML = '✕';
         
-        // PERBAIKAN: Tombol Hapus "Soft Delete" agar tidak freeze kamera
         btnDelete.onclick = function() {
           if(this.innerHTML === '✕') {
              this.innerHTML = '?'; 
-             this.style.backgroundColor = 'orange'; // Berubah oranye untuk konfirmasi
+             this.style.backgroundColor = 'orange';
              setTimeout(() => { 
                 if(this) { this.innerHTML = '✕'; this.style.backgroundColor = 'red'; }
-             }, 3000); // Kembali normal dalam 3 detik jika tidak jadi ditekan
+             }, 3000); 
           } else {
              arrayFoto.splice(index, 1); renderPreview(); 
           }
@@ -388,7 +410,6 @@
     }
 
     function hapusAudio() {
-      // Tombol hapus audio diganti tanpa confirm untuk mencegah freeze jika kamera masih menyala
       audioBase64 = null; const playback = document.getElementById('audioPlayback'); playback.pause(); playback.src = "";
       document.getElementById('audioContainer').style.display = 'none'; document.getElementById('btnHapusAudio').style.display = 'none';
       document.getElementById('btnRekam').innerText = "🎙️ Mulai Rekam"; document.getElementById('btnRekam').classList.remove('accent');
