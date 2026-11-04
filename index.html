@@ -54,7 +54,6 @@
     #canvasContainer { position: relative; width: 300px; height: 400px; margin: 0 auto 15px auto; box-shadow: 0 4px 8px rgba(0,0,0,0.2); background: white; }
     #canvasFrame { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
     
-    /* GAYA BARU UNTUK LOADING YANG LEBIH ELEGAN */
     .loading { display: none; font-weight: bold; color: var(--accent-color); margin-top: 15px; font-size: 13px; animation: pulse 1.5s infinite; }
     @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
     
@@ -82,7 +81,7 @@
 </head>
 <body onload="initApp()">
 
-  <!-- HALAMAN 0: LIVE FEEDS GALERI DENGAN TOMBOL REFRESH BARU -->
+  <!-- HALAMAN 0: LIVE FEEDS GALERI -->
   <div id="page0" class="page active" style="padding: 0;">
     <div style="position: sticky; top: 0; background: var(--bg-color); z-index: 10; padding: 15px 0; border-bottom: 1px solid #ddd;">
       <h2 style="color: var(--primary-color); font-weight: 900; margin: 0;">Live Feeds</h2>
@@ -103,8 +102,12 @@
     <div style="text-align: left;"><button onclick="batalkanSesi()" class="btn-back">← Kembali ke Feeds</button></div>
     <h2 style="color: var(--primary-color); font-weight: 900;">Virtual Photobooth</h2>
     <p>Silakan isi data diri Anda</p>
+    
     <input type="text" id="inputNama" placeholder="Nama Anda (Cth: Budi)" oninput="saveLokal()">
-    <input type="text" id="inputKupon" placeholder="Nomor Kupon (Cth: 001)" oninput="saveLokal()">
+    
+    <!-- PERBAIKAN: Input Kupon dibatasi murni hanya angka, memicu Numpad otomatis di HP -->
+    <input type="text" id="inputKupon" placeholder="Nomor Kupon (Cth: 001)" inputmode="numeric" pattern="[0-9]*" oninput="this.value = this.value.replace(/[^0-9]/g, ''); saveLokal()">
+    
     <button id="btnLogin" onclick="verifikasiLogin()">Lanjut</button>
   </div>
 
@@ -333,18 +336,15 @@
       }
     }
 
-    // MODIFIKASI: Menambahkan parameter paksaan refresh (isForceRefresh)
     function muatFeeds(isForceRefresh = false) {
       const loadingText = document.getElementById('feedLoading');
       
       if (isForceRefresh) {
-        // Hapus cache, bersihkan layar, dan paksa tampilkan animasi loading
         localStorage.removeItem('photoboothGalleryCache');
         document.getElementById('feedGrid').innerHTML = "";
         loadingText.style.display = 'block';
         loadingText.innerText = "⏳ Menarik foto terbaru dari server...";
       } else {
-        // Tarik dari memori lokal terlebih dahulu jika tidak dipaksa refresh
         const cachedFeeds = localStorage.getItem('photoboothGalleryCache');
         if (cachedFeeds) {
           loadingText.style.display = 'none';
