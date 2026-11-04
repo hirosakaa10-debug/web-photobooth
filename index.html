@@ -85,7 +85,9 @@
       <p style="margin: 5px 0 15px 0; font-size: 12px;">Share & Listen to Memories</p>
       <button onclick="gantiHalaman('page1')" class="accent" style="width: 100%; margin: 0;">📸 Take Photo</button>
     </div>
-    <div id="feedLoading" class="loading" style="display: none; margin-top: 20px;">Memuat galeri...</div>
+    
+    <!-- Teks Memuat kini diubah ikonnya agar lebih bagus -->
+    <div id="feedLoading" class="loading" style="display: none; margin-top: 20px; font-size: 13px;">⏳ Sedang menyinkronkan galeri...</div>
     <div id="feedGrid" class="feed-container"></div>
   </div>
 
@@ -214,9 +216,6 @@
       evt.currentTarget.classList.add("active");
     }
 
-    // =========================================================================
-    // FITUR ANTI REFRESH (Penyimpanan Local Storage Tahan Banting)
-    // =========================================================================
     function saveLokal() {
       const pageActive = document.querySelector('.page.active').id;
       if (pageActive === 'page0' || pageActive === 'page5') return;
@@ -291,13 +290,9 @@
     let audioCtx = null; let currentAudioSource = null; let currentPlayingBtn = null;
     function initAudioContext() { if (!audioCtx) { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); } if (audioCtx.state === 'suspended') { audioCtx.resume(); } }
 
-    // =========================================================================
-    // FITUR CACHE FIRST RENDERING UNTUK GALERI FEEDS
-    // =========================================================================
     function renderFeedData(dataArray) {
       const grid = document.getElementById('feedGrid');
       grid.innerHTML = "";
-      
       if(dataArray && dataArray.length > 0) {
         dataArray.forEach(item => {
           const card = document.createElement('div'); card.className = 'feed-card';
@@ -333,9 +328,8 @@
 
     function muatFeeds() {
       const loadingText = document.getElementById('feedLoading');
-      
-      // 1. Tampilkan riwayat cache lokal segera jika ada (waktu jeda 0 detik)
       const cachedFeeds = localStorage.getItem('photoboothGalleryCache');
+      
       if (cachedFeeds) {
         loadingText.style.display = 'none';
         try { renderFeedData(JSON.parse(cachedFeeds)); } catch(e) {}
@@ -343,670 +337,26 @@
         loadingText.style.display = 'block'; 
       }
 
-      // 2. Tarik data baru dari server secara diam-diam
       const fetchUrl = API_URL + "?timestamp=" + new Date().getTime();
       fetch(fetchUrl, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ action: "getFeeds", payload: {} }) })
       .then(res => res.json())
       .then(data => {
         if(data.status === "success") {
-          // Hanya menyimpan 10 foto terbaru ke cache agar tidak melanggar batas 5MB perangkat Apple
           try {
             const cacheData = data.data.slice(0, 10);
             localStorage.setItem('photoboothGalleryCache', JSON.stringify(cacheData));
-          } catch(e) { console.warn("Memori cache kepenuhan, operasi cache dibatalkan."); }
-          
+          } catch(e) { console.warn("Memori cache kepenuhan."); }
           loadingText.style.display = 'none';
-          renderFeedData(data.data); // Update galeri tanpa berkedip
+          renderFeedData(data.data); 
         } else {
           if(!cachedFeeds) document.getElementById('feedGrid').innerHTML = "<p style='grid-column: span 2; text-align: center; color: #888;'>Belum ada foto. Jadilah yang pertama!</p>";
         }
       }).catch(err => { 
-        if(!cachedFeeds) loadingText.innerText = "Gagal memuat galeri."; 
-      });
-    }
-
-    function mainkanAudioFeed(base64Data, btnElement) {
-      initAudioContext(); 
-      if (currentPlayingBtn === btnElement && currentAudioSource) { currentAudioSource.stop(); currentAudioSource = null; btnElement.innerHTML = '▶'; currentPlayingBtn = null; return; }
-      if (currentAudioSource) { currentAudioSource.stop(); if (currentPlayingBtn) currentPlayingBtn.innerHTML = '▶'; currentAudioSource = null; }
-      btnElement.innerHTML = '⏳'; currentPlayingBtn = btnElement;
-      try {
-        let base64String = base64Data; if (base64String.indexOf(',') !== -1) { base64String = base64String.split(',')[1]; }
-        const binaryString = window.atob(base64String); const len = binaryString.length; const bytes = new Uint8Array(len);
-        for (let i = 0; i < len; i++) { bytes[i] = binaryString.charCodeAt(i); }
-        audioCtx.decodeAudioData(bytes.buffer.slice(0), function(buffer) {
-          const source = audioCtx.createBufferSource(); source.buffer = buffer; source.connect(audioCtx.destination); source.start(0); 
-          currentAudioSource = source; btnElement.innerHTML = '⏸';
-          source.onended = () => { btnElement.innerHTML = '▶'; if (currentPlayingBtn === btnElement) { currentAudioSource = null; currentPlayingBtn = null; } };
-        }, function(e) { console.error(e); alert("Gagal memutar. Format suara tidak terbaca."); btnElement.innerHTML = '▶'; });
-      } catch (err) { console.error(err); btnElement.innerHTML = '▶'; }
-    }
-
-    async function mulaiKamera() {
-      const video = document.getElementById('videoFeed');
-      const btnPutar = document.getElementById('btnPutarKamera');
-      if(btnPutar) { btnPutar.disabled = true; btnPutar.innerText = "⏳..."; }
-      if (videoStream) { videoStream.getTracks().forEach(track => track.stop()); videoStream = null; }
-      video.srcObject = null;
-      
-      try {
-        videoStream = await navigator.mediaDevices.getUserMedia({ 
-          video: { facingMode: facingMode, width: { ideal: 1280 }, height: { ideal: 960 } } 
-        });
-        video.srcObject = videoStream; video.style.transform = facingMode === "user" ? "scaleX(-1)" : "scaleX(1)";
-        document.getElementById('fallbackKameraUpload').style.display = "none";
-        video.onloadedmetadata = () => {
-          video.play().then(() => { if(btnPutar) { btnPutar.disabled = false; btnPutar.innerText = "🔄 Putar"; }
-          }).catch(e => { if(btnPutar) { btnPutar.disabled = false; btnPutar.innerText = "🔄 Putar"; } });
-        };
-      } catch (err) {
-        console.error(err); document.getElementById('fallbackKameraUpload').style.display = "block";
-        if(btnPutar) { btnPutar.disabled = false; btnPutar.innerText = "🔄 Putar"; }
-      }
-    }
-
-    function gantiKamera() { facingMode = facingMode === "user" ? "environment" : "user"; mulaiKamera(); }
-    function matikanKamera() { if (videoStream) { videoStream.getTracks().forEach(track => track.stop()); videoStream = null; } }
-
-    function jepretKameraWeb() {
-      if(arrayFoto.length >= 5) return; 
-      const video = document.getElementById('videoFeed'); if (!video.videoWidth) return; 
-      
-      try {
-        initAudioContext(); const osc = audioCtx.createOscillator(); const gain = audioCtx.createGain();
-        osc.connect(gain); gain.connect(audioCtx.destination); osc.type = 'square'; osc.frequency.setValueAtTime(800, audioCtx.currentTime);
-        osc.frequency.exponentialRampToValueAtTime(40, audioCtx.currentTime + 0.1);
-        gain.gain.setValueAtTime(0.5, audioCtx.currentTime); gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.1);
-        osc.start(audioCtx.currentTime); osc.stop(audioCtx.currentTime + 0.1);
-      } catch(e) {}
-      
-      const flash = document.getElementById('flashEffect'); flash.classList.add('flash-active');
-      setTimeout(() => flash.classList.remove('flash-active'), 50);
-      video.pause();
-
-      const canvas = document.getElementById('captureCanvas'); const ctx = canvas.getContext('2d');
-      const targetWidth = canvas.width; const targetHeight = canvas.height;  
-      const videoRatio = video.videoWidth / video.videoHeight; const targetRatio = targetWidth / targetHeight;
-      let drawWidth, drawHeight, startX, startY;
-      
-      if (videoRatio > targetRatio) {
-        drawHeight = targetHeight; drawWidth = video.videoWidth * (targetHeight / video.videoHeight); startX = (targetWidth - drawWidth) / 2; startY = 0;
-      } else {
-        drawWidth = targetWidth; drawHeight = video.videoHeight * (targetWidth / video.videoWidth); startX = 0; startY = (targetHeight - drawHeight) / 2;
-      }
-      
-      ctx.save();
-      if (facingMode === "user") { ctx.translate(targetWidth, 0); ctx.scale(-1, 1); }
-      ctx.fillStyle = "white"; ctx.fillRect(0,0,targetWidth,targetHeight);
-      ctx.drawImage(video, startX, startY, drawWidth, drawHeight);
-      ctx.restore();
-      
-      arrayFoto.push(canvas.toDataURL('image/jpeg', 0.9)); 
-      renderPreview(); saveLokal(); 
-      setTimeout(() => { video.play(); }, 1000);
-    }
-
-    function verifikasiLogin() {
-      namaUser = document.getElementById('inputNama').value.trim(); kuponUser = document.getElementById('inputKupon').value.trim();
-      if(namaUser === "" || kuponUser === "") { 
-        const btn = document.getElementById('btnLogin'); const oldText = btn.innerText;
-        btn.innerText = "⚠️ Nama & Kupon Wajib Diisi!"; btn.style.backgroundColor = "orange";
-        setTimeout(() => { btn.innerText = oldText; btn.style.backgroundColor = ""; }, 3000); return; 
-      }
-      gantiHalaman('page2'); mulaiKamera(); 
-    }
-
-    function renderPreview() {
-      const previewArea = document.getElementById('previewArea'); previewArea.innerHTML = ""; 
-      const btnJepret = document.getElementById('btnJepretWeb');
-      if (btnJepret) {
-        if (arrayFoto.length >= 5) { btnJepret.disabled = true; btnJepret.innerHTML = "📸 Penuh (5/5)";
-        } else { btnJepret.disabled = false; btnJepret.innerHTML = "📸 Jepret (" + arrayFoto.length + "/5)"; }
-      }
-
-      arrayFoto.forEach((src, index) => {
-        const wrapper = document.createElement('div'); wrapper.className = 'photo-wrapper';
-        const imgEl = document.createElement('img'); imgEl.src = src;
-        const btnDelete = document.createElement('button'); btnDelete.className = 'btn-delete'; btnDelete.innerHTML = '✕';
-        
-        btnDelete.onclick = function() {
-          if(this.innerHTML === '✕') {
-             this.innerHTML = '?'; this.style.backgroundColor = 'orange';
-             setTimeout(() => { if(this) { this.innerHTML = '✕'; this.style.backgroundColor = '#ff3b30'; } }, 3000); 
-          } else { arrayFoto.splice(index, 1); renderPreview(); saveLokal(); }
-        };
-        wrapper.appendChild(imgEl); wrapper.appendChild(btnDelete); previewArea.appendChild(wrapper);
-      });
-    }
-
-    function prosesFotoNatif(event) {
-      if(arrayFoto.length >= 5) return; 
-      const file = event.target.files[0]; if(!file) return;
-      const reader = new FileReader();
-      reader.onload = function(e) {
-        const img = new Image();
-        img.onload = function() {
-          const canvas = document.createElement('canvas'); const MAX_WIDTH = 800; const scaleSize = MAX_WIDTH / img.width;
-          canvas.width = MAX_WIDTH; canvas.height = img.height * scaleSize;
-          canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
-          arrayFoto.push(canvas.toDataURL('image/jpeg', 0.8)); renderPreview(); saveLokal(); event.target.value = '';
+        if(!cachedFeeds) {
+          loadingText.style.display = 'block';
+          loadingText.innerText = "Gagal memuat galeri."; 
         }
-        img.src = e.target.result;
-      }
-      reader.readAsDataURL(file);
-    }
-
-    async function toggleRekam() {
-      const btn = document.getElementById('btnRekam');
-      if (btn.innerText.includes("Mulai") || btn.innerText.includes("Ulang")) {
-        try {
-          const stream = await navigator.mediaDevices.getUserMedia({ audio: true }); 
-          let options = { mimeType: 'audio/webm' };
-          if (MediaRecorder.isTypeSupported('audio/mp4')) { options = { mimeType: 'audio/mp4' }; }
-          mediaRecorder = new MediaRecorder(stream, options); audioChunks = [];
-          
-          mediaRecorder.ondataavailable = e => { if (e.data.size > 0) audioChunks.push(e.data); };
-          mediaRecorder.onstop = () => {
-            const audioBlob = new Blob(audioChunks, { type: mediaRecorder.mimeType }); const reader = new FileReader();
-            reader.onloadend = () => {
-              audioBase64 = reader.result; const playback = document.getElementById('audioPlayback');
-              playback.src = audioBase64; playback.load(); 
-              document.getElementById('audioContainer').style.display = 'flex'; document.getElementById('btnHapusAudio').style.display = 'block';
-              saveLokal(); 
-            };
-            reader.readAsDataURL(audioBlob); stream.getTracks().forEach(track => track.stop());
-          };
-
-          mediaRecorder.start(); btn.innerText = "🛑 Hentikan Rekaman"; btn.classList.add('accent');
-          timeoutRekaman = setTimeout(() => { if(mediaRecorder && mediaRecorder.state === "recording") toggleRekam(); }, 30000);
-        } catch (err) { btn.style.display = "none"; document.getElementById('areaFallback').style.display = "block"; }
-      } else { 
-        mediaRecorder.stop(); clearTimeout(timeoutRekaman); btn.innerText = "🎙️ Rekam Ulang"; btn.classList.remove('accent'); 
-      }
-    }
-
-    function prosesAudioNatif(event) {
-      const file = event.target.files[0]; if(!file) return;
-      const reader = new FileReader();
-      reader.onload = function(e) {
-        audioBase64 = e.target.result; const playback = document.getElementById('audioPlayback');
-        playback.src = audioBase64; playback.load();
-        document.getElementById('audioContainer').style.display = 'flex'; document.getElementById('btnHapusAudio').style.display = 'block';
-        document.querySelector('.iphone-warning').style.display = 'none'; event.target.value = ''; saveLokal();
-      }
-      reader.readAsDataURL(file);
-    }
-
-    function hapusAudio() {
-      audioBase64 = null; const playback = document.getElementById('audioPlayback'); playback.pause(); playback.src = "";
-      document.getElementById('audioContainer').style.display = 'none'; document.getElementById('btnHapusAudio').style.display = 'none';
-      document.getElementById('btnRekam').innerText = "🎙️ Mulai Rekam"; document.getElementById('btnRekam').classList.remove('accent');
-      saveLokal();
-    }
-
-    function simpanKeDrive() {
-      if(arrayFoto.length === 0) { 
-        const btn = document.getElementById('btnSimpanDrive'); const oldText = btn.innerText;
-        btn.innerText = "⚠️ Wajib ambil minimal 1 foto!"; btn.style.backgroundColor = "orange";
-        setTimeout(() => { btn.innerText = oldText; btn.style.backgroundColor = ""; }, 3000); return; 
-      }
-      const btnSave = document.getElementById('btnSimpanDrive'); btnSave.disabled = true; btnSave.innerText = "Menyimpan... Mohon Tunggu";
-      document.getElementById('loadingSave').style.display = 'block';
-      const pesanTeks = document.getElementById('inputPesan').value.trim();
-      const payload = { nama: namaUser, kupon: kuponUser, photos: arrayFoto, audio: audioBase64, pesan: pesanTeks };
-      
-      fetch(API_URL, {
-        method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ action: "saveCaptureData", payload: payload })
-      }).then(response => response.json())
-      .then(data => {
-        if(data.status === "success") {
-          savedAudioUrl = data.data.audioUrl || "";
-          document.getElementById('loadingSave').style.display = 'none';
-          btnSave.disabled = false; btnSave.innerText = "💾 Save (Simpan Semua)";
-          siapkanHalamanPrint(); 
-        } else { throw new Error(data.message); }
-      }).catch(error => {
-        alert("Gagal menyimpan: " + error.message);
-        document.getElementById('loadingSave').style.display = 'none'; btnSave.disabled = false; btnSave.innerText = "💾 Save (Simpan Semua)";
       });
-    }
-
-    function siapkanHalamanPrintLokal() {
-      const grid = document.getElementById('selectionGrid'); grid.innerHTML = "";
-      arrayFoto.forEach((src) => {
-        const img = document.createElement('img'); img.src = src; img.style.width = "100px"; img.style.borderRadius = "10px"; img.style.cursor = "pointer";
-        if(fotoTerpilih === src) img.style.border = "4px solid var(--accent-color)";
-        img.onclick = () => { document.querySelectorAll('#selectionGrid img').forEach(i => i.style.border = "none"); img.style.border = "4px solid var(--accent-color)"; fotoTerpilih = src; saveLokal(); };
-        grid.appendChild(img);
-      });
-    }
-
-    function siapkanHalamanPrint() { matikanKamera(); gantiHalaman('page3'); siapkanHalamanPrintLokal(); }
-
-    function lanjutKeEdit() { 
-      if(!fotoTerpilih) { 
-        const btn = document.getElementById('btnLanjutEdit'); const oldText = btn.innerText;
-        btn.innerText = "⚠️ Pilih 1 Foto!"; btn.style.backgroundColor = "orange";
-        setTimeout(() => { btn.innerText = oldText; btn.style.backgroundColor = ""; }, 3000); return; 
-      } 
-      gantiHalaman('page4'); terapkanFilter('normal'); inisialisasiEditFoto(); 
-    }
-    
-    function kembaliPilihFoto() { filterSaatIni = "normal"; siapkanHalamanPrint(); }
-
-    function inisialisasiEditFoto() {
-      imgObj.onload = () => {
-        const scaleX = FRAME_WIDTH / imgObj.width; const scaleY = FRAME_HEIGHT / imgObj.height; imgScale = Math.max(scaleX, scaleY); 
-        imgX = FRAME_X + (FRAME_WIDTH - (imgObj.width * imgScale)) / 2; imgY = FRAME_Y + (FRAME_HEIGHT - (imgObj.height * imgScale)) / 2;
-        gambarDiCanvas();
-      }; imgObj.src = fotoTerpilih;
-    }
-
-    function gambarDiCanvas() {
-      const canvas = document.getElementById('canvasFrame'); const ctx = canvas.getContext('2d');
-      ctx.fillStyle = "white"; ctx.fillRect(0, 0, canvas.width, canvas.height);
-      ctx.save(); ctx.beginPath(); ctx.rect(FRAME_X, FRAME_Y, FRAME_WIDTH, FRAME_HEIGHT); ctx.clip(); 
-      ctx.filter = "none"; ctx.drawImage(imgObj, imgX, imgY, imgObj.width * imgScale, imgObj.height * imgScale);
-      
-      if (filterSaatIni !== 'normal') {
-        const imgData = ctx.getImageData(FRAME_X, FRAME_Y, FRAME_WIDTH, FRAME_HEIGHT); const data = imgData.data;
-        const cx = FRAME_WIDTH / 2; const cy = FRAME_HEIGHT / 2; const maxDist = Math.sqrt(cx*cx + cy*cy);
-        for (let i = 0; i < data.length; i += 4) {
-          let r = data[i], g = data[i + 1], b = data[i + 2];
-          if (filterSaatIni === 'polaroid') {
-            r *= 1.15; g *= 1.15; b *= 1.15;
-            let contrastFactor = 0.85; r = contrastFactor * (r - 128) + 128; g = contrastFactor * (g - 128) + 128; b = contrastFactor * (b - 128) + 128;
-            r = 25 + (r * 210 / 255); g = 25 + (g * 210 / 255); b = 25 + (b * 210 / 255);
-            r += 15; g += 6; b -= 15;
-            let luma = 0.299 * r + 0.587 * g + 0.114 * b; let sat = 0.95; r = luma + sat * (r - luma); g = luma + sat * (g - luma); b = luma + sat * (b - luma);
-            let pixelIndex = i / 4; let px = pixelIndex % FRAME_WIDTH; let py = Math.floor(pixelIndex / FRAME_WIDTH);
-            let dist = Math.sqrt((px - cx)*(px - cx) + (py - cy)*(py - cy)); let vignetteAmt = 1.0 - (dist / maxDist) * 0.25; 
-            r *= vignetteAmt; g *= vignetteAmt; b *= vignetteAmt;
-            let noise = (Math.random() - 0.5) * 35; r += noise; g += noise; b += noise;
-          } else if (filterSaatIni === 'digicam') {
-            let contrast = 1.25; r = ((r / 255 - 0.5) * contrast + 0.5) * 255; g = ((g / 255 - 0.5) * contrast + 0.5) * 255; b = ((b / 255 - 0.5) * contrast + 0.5) * 255;
-            let luma = 0.299 * r + 0.587 * g + 0.114 * b; let sat = 1.3; r = luma + sat * (r - luma); g = luma + sat * (g - luma); b = luma + sat * (b - luma);
-            b += 15; g += 5;
-          }
-          data[i] = Math.min(255, Math.max(0, r)); data[i + 1] = Math.min(255, Math.max(0, g)); data[i + 2] = Math.min(255, Math.max(0, b));
-        } ctx.putImageData(imgData, FRAME_X, FRAME_Y);
-      } ctx.restore();
-      
-      ctx.fillStyle = "black"; ctx.font = "bold 60px Montserrat"; ctx.textAlign = "center"; 
-      ctx.fillText(namaUser, canvas.width/2, 1080);
-    }
-
-    function terapkanFilter(tipe) {
-      filterSaatIni = tipe;
-      document.getElementById('btnPolaroid').classList.remove('active-filter'); document.getElementById('btnDigicam').classList.remove('active-filter'); document.getElementById('btnNormal').classList.remove('active-filter');
-      if(tipe === 'polaroid') document.getElementById('btnPolaroid').classList.add('active-filter');
-      else if (tipe === 'digicam') document.getElementById('btnDigicam').classList.add('active-filter');
-      else document.getElementById('btnNormal').classList.add('active-filter');
-      gambarDiCanvas(); saveLokal();
-    }
-
-    function konfirmasiCetak() {
-      const yakin = confirm("Kirim foto ini ke Galeri Live Feeds?");
-      if(yakin) {
-        const btnPrint = document.getElementById('btnKonfirmasiCetak'); btnPrint.disabled = true; btnPrint.innerText = "Memproses...";
-        document.getElementById('loadingPrint').style.display = 'block';
-        const finalImage = document.getElementById('canvasFrame').toDataURL('image/jpeg', 0.9);
-        const pesanTeks = document.getElementById('inputPesan').value.trim(); 
-        const payload = { image: finalImage, kupon: kuponUser, nama: namaUser, audioUrl: savedAudioUrl, pesan: pesanTeks };
-        
-        fetch(API_URL, {
-          method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ action: "savePrintedPhoto", payload: payload })
-        }).then(response => response.json())
-        .then(data => {
-          if(data.status === "success") {
-            document.getElementById('loadingPrint').style.display = 'none'; 
-            document.getElementById('btnKonfirmasiCetak').disabled = false; document.getElementById('btnKonfirmasiCetak').innerText = "Kirim Ke Live Feeds";
-            clearLokal();
-            namaUser = ""; kuponUser = ""; arrayFoto = []; audioBase64 = null; savedAudioUrl = ""; fotoTerpilih = null; filterSaatIni = "normal";
-            document.getElementById('inputNama').value = ""; document.getElementById('inputKupon').value = ""; document.getElementById('inputPesan').value = "";
-            gantiHalaman('page0'); muatFeeds(); 
-          } else { throw new Error(data.message); }
-        }).catch(error => {
-          alert("Gagal memproses pengiriman: " + error.message);
-          document.getElementById('loadingPrint').style.display = 'none'; 
-          document.getElementById('btnKonfirmasiCetak').disabled = false; document.getElementById('btnKonfirmasiCetak').innerText = "Kirim Ke Live Feeds";
-        });
-      }
-    }
-  </script>
-</body>
-</html><!DOCTYPE html>
-<html>
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Virtual Photobooth</title>
-  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;700;900&display=swap" rel="stylesheet">
-  <style>
-    :root {
-      --bg-color: #f4f4f9;
-      --primary-color: #2F2FA2; 
-      --accent-color: #F64C72; 
-      --text-color: #333333;
-    }
-
-    body { font-family: 'Montserrat', sans-serif; background-color: var(--bg-color); color: var(--text-color); margin: 0; padding: 20px; text-align: center; display: flex; flex-direction: column; align-items: center; overscroll-behavior-y: contain; }
-    .page { display: none; width: 100%; max-width: 500px; } 
-    .active { display: block; }
-    
-    input[type="text"] { width: 90%; padding: 15px; margin: 10px 0; border: 2px solid var(--primary-color); border-radius: 10px; font-family: 'Montserrat'; font-weight: 700; box-sizing: border-box; }
-    textarea { width: 100%; padding: 15px; margin: 10px 0; border: 2px solid var(--primary-color); border-radius: 10px; font-family: 'Montserrat'; font-weight: 500; resize: none; box-sizing: border-box; }
-
-    button { background-color: var(--primary-color); color: white; border: none; padding: 15px 30px; margin: 10px 5px; border-radius: 25px; font-family: 'Montserrat'; font-weight: 700; cursor: pointer; width: 95%; box-shadow: 0 4px 6px rgba(0,0,0,0.1); transition: background-color 0.3s; }
-    button:active { transform: scale(0.98); }
-    button.accent { background-color: var(--accent-color); }
-    button.btn-back { background-color: transparent; color: var(--primary-color); border: 2px solid var(--primary-color); padding: 10px 20px; margin-bottom: 20px; width: auto; font-size: 14px; }
-    button:disabled { background-color: #a0a0a0 !important; cursor: not-allowed; box-shadow: none; transform: none; border-color: #a0a0a0; color: white; }
-
-    .btn-filter { width: 40%; padding: 12px 10px; font-size: 12px; transition: all 0.3s ease; }
-    .btn-filter.active-filter { background-color: var(--accent-color); border: 2px solid white; transform: scale(1.05); }
-    input[type="file"] { display: none; }
-    .btn-native { display: inline-block; background-color: var(--accent-color); color: white; padding: 15px 30px; margin: 10px 0; border-radius: 25px; font-family: 'Montserrat'; font-weight: 700; cursor: pointer; width: 80%; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
-
-    .tab-nav { display: flex; background: #e0e0e0; border-radius: 30px; margin: 0 auto 15px auto; width: 100%; overflow: hidden; box-shadow: inset 0 2px 4px rgba(0,0,0,0.1); }
-    .tab-btn { flex: 1; padding: 12px 0; font-size: 13px; font-weight: 700; color: #666; cursor: pointer; transition: all 0.3s; border: none; background: transparent; outline: none; margin: 0; border-radius: 30px; }
-    .tab-btn.active { background: var(--primary-color); color: white; box-shadow: 0 2px 5px rgba(0,0,0,0.2); }
-    .tab-pane { display: none; width: 100%; animation: slideIn 0.3s ease; }
-    .tab-pane.active { display: block; }
-    @keyframes slideIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-
-    .photo-grid { display: flex; gap: 15px; overflow-x: auto; margin-top: 10px; margin-bottom: 10px; padding: 15px 10px; }
-    .photo-wrapper { position: relative; display: inline-block; }
-    .photo-wrapper img { width: 60px; height: 80px; object-fit: cover; border-radius: 5px; border: 1px solid #ddd; }
-    .btn-delete { position: absolute; top: -12px; right: -12px; background-color: #ff3b30; color: white; border: 2px solid white; border-radius: 50%; width: 30px; height: 30px; font-size: 14px; font-weight: bold; cursor: pointer; display: flex; justify-content: center; align-items: center; padding: 0; margin: 0; box-shadow: 0 4px 6px rgba(0,0,0,0.3); transition: background-color 0.2s; z-index: 5; }
-    
-    .btn-delete-audio { background-color: transparent; color: red; border: 2px solid red; padding: 10px 20px; margin-top: 10px; border-radius: 20px; cursor: pointer; font-family: 'Montserrat'; font-weight: bold; display: none; width: auto; }
-
-    .camera-polaroid-frame { width: 260px; height: 300px; margin: 0 auto 15px auto; background: #222; position: relative; overflow: hidden; border: 15px solid white; border-bottom: 50px solid white; box-shadow: 0 4px 10px rgba(0,0,0,0.2); border-radius: 2px; }
-    #videoFeed { width: 100%; height: 100%; object-fit: cover; }
-    
-    #flashEffect { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: white; opacity: 0; pointer-events: none; z-index: 10; transition: opacity 0.5s ease-out; }
-    .flash-active { opacity: 1 !important; transition: none !important; }
-
-    #canvasContainer { position: relative; width: 300px; height: 400px; margin: 0 auto 15px auto; box-shadow: 0 4px 8px rgba(0,0,0,0.2); background: white; }
-    #canvasFrame { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
-    .loading { display: none; font-weight: bold; color: var(--accent-color); margin-top: 10px;}
-    .iphone-warning { font-size: 11px; color: #d9534f; background: #fdf2f2; border: 1px solid #f5c6cb; padding: 10px; border-radius: 8px; margin-top: 10px; text-align: left; line-height: 1.4; }
-
-    .feed-container { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; padding-top: 10px; }
-    .feed-card { position: relative; border-radius: 12px; overflow: hidden; background: #222; aspect-ratio: 3/4; box-shadow: 0 4px 10px rgba(0,0,0,0.15); }
-    .feed-card img { width: 100%; height: 100%; object-fit: cover; }
-    .feed-overlay { position: absolute; bottom: 0; left: 0; right: 0; background: linear-gradient(to top, rgba(0,0,0,0.85), transparent); padding: 25px 12px 12px 12px; display: flex; justify-content: space-between; align-items: flex-end; }
-    .feed-name { color: white; font-weight: bold; font-size: 13px; text-shadow: 1px 1px 3px rgba(0,0,0,0.8); text-align: left; }
-    
-    .feed-message {
-      color: rgba(255, 255, 255, 0.9); font-size: 10px; font-style: italic; margin-top: 5px;
-      border-left: 2px solid #FFC107; padding-left: 6px; text-align: left; display: -webkit-box;
-      -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; line-height: 1.3;
-      cursor: pointer; transition: all 0.2s ease; position: relative; z-index: 2;
-    }
-    .feed-message.expanded {
-      -webkit-line-clamp: unset; background: rgba(0, 0, 0, 0.75); padding: 8px;
-      border-radius: 0 6px 6px 0; border-left: 3px solid #FFC107; margin-left: -2px; 
-    }
-
-    .btn-play { background: rgba(255,255,255,0.25); border: 1px solid rgba(255,255,255,0.5); backdrop-filter: blur(4px); border-radius: 50%; width: 32px; height: 32px; display: flex; justify-content: center; align-items: center; cursor: pointer; color: white; font-size: 14px; flex-shrink: 0; }
-  </style>
-</head>
-<body onload="initApp()">
-
-  <!-- HALAMAN 0: LIVE FEEDS GALERI -->
-  <div id="page0" class="page active" style="padding: 0;">
-    <div style="position: sticky; top: 0; background: var(--bg-color); z-index: 10; padding: 15px 0; border-bottom: 1px solid #ddd;">
-      <h2 style="color: var(--primary-color); font-weight: 900; margin: 0;">Live Feeds</h2>
-      <p style="margin: 5px 0 15px 0; font-size: 12px;">Share & Listen to Memories</p>
-      <button onclick="gantiHalaman('page1')" class="accent" style="width: 100%; margin: 0;">📸 Take Photo</button>
-    </div>
-    <div id="feedLoading" class="loading" style="display: block; margin-top: 20px;">Memuat galeri...</div>
-    <div id="feedGrid" class="feed-container"></div>
-  </div>
-
-  <!-- HALAMAN 1: LOGIN -->
-  <div id="page1" class="page">
-    <div style="text-align: left;"><button onclick="batalkanSesi()" class="btn-back">← Kembali ke Feeds</button></div>
-    <h2 style="color: var(--primary-color); font-weight: 900;">Virtual Photobooth</h2>
-    <p>Silakan isi data diri Anda</p>
-    <input type="text" id="inputNama" placeholder="Nama Anda (Cth: Budi)" oninput="saveLokal()">
-    <input type="text" id="inputKupon" placeholder="Nomor Kupon (Cth: 001)" oninput="saveLokal()">
-    <button id="btnLogin" onclick="verifikasiLogin()">Lanjut</button>
-  </div>
-
-  <!-- HALAMAN 2: CAMERA & OPTIONAL TABS -->
-  <div id="page2" class="page">
-    <h3 style="color: var(--primary-color); margin-bottom: 5px;">Ambil Momenmu</h3>
-    <p style="font-size: 11px; margin-top: 0; margin-bottom: 15px;">Posisikan senyummu di dalam bingkai polaroid (Wajib)</p>
-    
-    <!-- BAGIAN 1: KAMERA SELALU TERBUKA DI ATAS -->
-    <div class="camera-polaroid-frame">
-      <video id="videoFeed" autoplay playsinline></video>
-      <!-- PERBAIKAN: Resolusi Capture Dinaikkan 3x Lipat Jadi HD (780x900) -->
-      <canvas id="captureCanvas" width="780" height="900" style="display:none;"></canvas>
-      <div id="flashEffect"></div>
-    </div>
-    
-    <div style="display: flex; justify-content: center; gap: 10px; margin-bottom: 10px; width: 100%; max-width: 330px; margin: 0 auto;">
-      <button id="btnJepretWeb" onclick="jepretKameraWeb()" class="accent" style="flex: 2; margin: 0;">📸 Jepret (0/5)</button>
-      <button id="btnPutarKamera" onclick="gantiKamera()" style="flex: 1; margin: 0; background: #666; font-size: 13px;">🔄 Putar</button>
-    </div>
-
-    <div id="fallbackKameraUpload" style="display: none; margin-top: 15px;">
-      <label for="kameraNatif" class="btn-native" style="background-color: #444; width: 85%; font-size: 12px; padding: 10px;">⚠️ Gunakan Kamera Bawaan (Jika Error)</label>
-      <input type="file" id="kameraNatif" accept="image/*" capture="user" onchange="prosesFotoNatif(event)">
-    </div>
-
-    <div id="previewArea" class="photo-grid"></div>
-    
-    <hr style="border: 1px solid #ddd; margin: 10px 0; width: 100%;">
-
-    <!-- BAGIAN 2: TAB PESAN OPSIONAL -->
-    <h3 style="color: var(--primary-color); margin-bottom: 15px; font-size: 16px;">Pesan Spesial (Opsional)</h3>
-    
-    <div style="width: 100%; max-width: 350px; margin: 0 auto;">
-      <div class="tab-nav">
-        <button class="tab-btn active" onclick="bukaTab(event, 'tab-teks')">✍️ Teks</button>
-        <button class="tab-btn" onclick="bukaTab(event, 'tab-suara')">🎙️ Suara</button>
-      </div>
-
-      <div id="tab-teks" class="tab-pane active">
-        <textarea id="inputPesan" placeholder="Ketik ucapan selamat, doa, atau kesan di sini..." rows="4" oninput="saveLokal()" style="height: 110px; font-size: 14px;"></textarea>
-      </div>
-
-      <div id="tab-suara" class="tab-pane">
-        <p style="font-size: 11px; margin-top: 0; margin-bottom: 10px; color: #666;">Maksimal durasi 30 detik</p>
-        <button id="btnRekam" onclick="toggleRekam()" style="width: 100%; margin: 0;">🎙️ Mulai Rekam</button>
-        
-        <div id="areaFallback" style="display: none; margin-top: 10px;">
-          <div class="iphone-warning">Ketuk tombol di bawah. Abaikan layar kamera jika terbuka.</div>
-          <label for="audioNatif" class="btn-native" style="background-color: var(--primary-color); width: 100%;">🎙️ Buka Perekam iPhone</label>
-          <input type="file" id="audioNatif" accept="audio/*" capture="microphone" onchange="prosesAudioNatif(event)">
-        </div>
-
-        <div id="audioContainer" style="display: none; align-items: center; flex-direction: column; margin-top: 15px;">
-          <audio id="audioPlayback" controls style="width:90%;"></audio>
-          <button class="btn-delete-audio" id="btnHapusAudio" onclick="hapusAudio()">🗑️ Hapus Rekaman</button>
-        </div>
-      </div>
-    </div>
-
-    <hr style="border: 1px solid #ddd; margin: 20px 0; width: 100%;">
-    
-    <button id="btnSimpanDrive" onclick="simpanKeDrive()">💾 Save (Simpan Semua)</button>
-    <div id="loadingSave" class="loading">Mengirim ke server... Mohon tunggu.</div>
-  </div>
-
-  <!-- HALAMAN 3: PILIH FOTO UNTUK DIPRINT -->
-  <div id="page3" class="page">
-    <h3 style="color: var(--primary-color);">Pilih 1 Foto Publikasi</h3>
-    <div id="selectionGrid" style="display: flex; flex-wrap: wrap; gap: 15px; justify-content: center; padding-top: 10px;"></div>
-    <button id="btnLanjutEdit" onclick="lanjutKeEdit()" class="accent" style="margin-top: 20px;">Lanjut Edit</button>
-  </div>
-
-  <!-- HALAMAN 4: ADJUST & FILTER -->
-  <div id="page4" class="page">
-    <div style="text-align: left;"><button onclick="kembaliPilihFoto()" class="btn-back">← Kembali Pilih Foto</button></div>
-    
-    <h3 style="color: var(--primary-color); margin-top: 0;">Sesuaikan Warna</h3>
-    <p style="font-size: 12px; margin-top: -10px;">Pilih filter yang diinginkan</p>
-    
-    <!-- PERBAIKAN: Resolusi Kanvas Frame Dinaikkan 3x Lipat Jadi HD (900x1200) tanpa mengubah ukuran visual di layar -->
-    <div id="canvasContainer"><canvas id="canvasFrame" width="900" height="1200" style="width: 100%; height: 100%;"></canvas></div>
-
-    <div>
-      <button id="btnPolaroid" class="btn-filter" onclick="terapkanFilter('polaroid')">Filter Polaroid</button>
-      <button id="btnDigicam" class="btn-filter" onclick="terapkanFilter('digicam')">Filter Digicam</button>
-      <button id="btnNormal" class="btn-filter active-filter" onclick="terapkanFilter('normal')" style="width: 82%; margin-top: 5px; background-color: #666;">Normal (Tanpa Filter)</button>
-    </div>
-    
-    <button id="btnKonfirmasiCetak" onclick="konfirmasiCetak()" class="accent" style="margin-top: 15px;">Kirim Ke Live Feeds</button>
-    <div id="loadingPrint" class="loading">Memproses finalisasi...</div>
-  </div>
-
-  <!-- HALAMAN 5: THANK YOU -->
-  <div id="page5" class="page">
-    <h1 style="color: var(--primary-color); font-weight: 900;">Terima Kasih!</h1>
-    <p>Momen Anda telah tersimpan dengan aman.</p>
-    <p>Download Foto Kamu Di Bawah Ini:</p>
-    <button onclick="window.open('MASUKKAN_LINK_FOLDER_ALL_PHOTOS_DISINI', '_blank')">📂 Buka Galeri Foto</button>
-  </div>
-
-  <script>
-    // --- GANTI URL DI BAWAH INI DENGAN API URL DARI GOOGLE APPS SCRIPT ANDA ---
-    const API_URL = "https://script.google.com/macros/s/AKfycbyNGrNS679PsiQ5r6KZJAvpsOrVQNQ7sZUNth5u6OzXnq7W6CsNJTuBdA0PbPvkEo8F/exec";
-
-    let namaUser = "", kuponUser = "", arrayFoto = [], audioBase64 = null, fotoTerpilih = null, filterSaatIni = "normal";
-    let savedAudioUrl = ""; 
-    let videoStream = null; let facingMode = "user"; 
-    
-    let mediaRecorder, audioChunks = [], timeoutRekaman;
-    let imgObj = new Image(), imgScale = 1, imgX = 0, imgY = 0;
-    
-    // PERBAIKAN: Konstanta Tata Letak diperbesar 3x lipat untuk menampung foto resolusi HD
-    const FRAME_X = 60, FRAME_Y = 60, FRAME_WIDTH = 780, FRAME_HEIGHT = 900;
-
-    function bukaTab(evt, namaTab) {
-      const isiTab = document.getElementsByClassName("tab-pane");
-      for (let i = 0; i < isiTab.length; i++) { isiTab[i].classList.remove("active"); }
-      const tombolTab = document.getElementsByClassName("tab-btn");
-      for (let i = 0; i < tombolTab.length; i++) { tombolTab[i].classList.remove("active"); }
-      document.getElementById(namaTab).classList.add("active");
-      evt.currentTarget.classList.add("active");
-    }
-
-    function saveLokal() {
-      const pageActive = document.querySelector('.page.active').id;
-      if (pageActive === 'page0' || pageActive === 'page5') return;
-      const state = {
-        namaUser: document.getElementById('inputNama').value.trim(), kuponUser: document.getElementById('inputKupon').value.trim(),
-        pesanUser: document.getElementById('inputPesan').value.trim(), arrayFoto: arrayFoto, audioBase64: audioBase64,
-        savedAudioUrl: savedAudioUrl, fotoTerpilih: fotoTerpilih, filterSaatIni: filterSaatIni, currentPage: pageActive
-      };
-      localStorage.setItem('photoboothState', JSON.stringify(state));
-    }
-
-    function clearLokal() { localStorage.removeItem('photoboothState'); }
-
-    function initApp() {
-      const saved = localStorage.getItem('photoboothState');
-      let isResuming = false;
-      if (saved) {
-        try {
-          const state = JSON.parse(saved);
-          if (state.currentPage && state.currentPage !== 'page0' && state.currentPage !== 'page5') {
-            namaUser = state.namaUser || ""; kuponUser = state.kuponUser || ""; let pesanUser = state.pesanUser || "";
-            arrayFoto = state.arrayFoto || []; audioBase64 = state.audioBase64 || null; savedAudioUrl = state.savedAudioUrl || "";
-            fotoTerpilih = state.fotoTerpilih || null; filterSaatIni = state.filterSaatIni || "normal";
-            
-            document.getElementById('inputNama').value = namaUser;
-            document.getElementById('inputKupon').value = kuponUser;
-            document.getElementById('inputPesan').value = pesanUser;
-            gantiHalaman(state.currentPage);
-            
-            if (arrayFoto.length > 0) renderPreview();
-            if (audioBase64) {
-              document.getElementById('audioPlayback').src = audioBase64;
-              document.getElementById('audioContainer').style.display = 'flex';
-              document.getElementById('btnHapusAudio').style.display = 'block';
-            }
-            if (state.currentPage === 'page2') { mulaiKamera(); } 
-            else if (state.currentPage === 'page3') { siapkanHalamanPrintLokal(); } 
-            else if (state.currentPage === 'page4') { terapkanFilter(filterSaatIni); inisialisasiEditFoto(); }
-            isResuming = true;
-          }
-        } catch (e) { console.error(e); }
-      }
-      if (!isResuming) { muatFeeds(); }
-    }
-
-    function batalkanSesi() {
-      if (arrayFoto.length > 0 || audioBase64 || document.getElementById('inputPesan').value.trim() !== "") {
-        const yakin = confirm("Anda memiliki memori yang belum tersimpan. Yakin ingin keluar?");
-        if (!yakin) return;
-      }
-      clearLokal();
-      namaUser = ""; kuponUser = ""; arrayFoto = []; audioBase64 = null; savedAudioUrl = ""; fotoTerpilih = null; filterSaatIni = "normal";
-      document.getElementById('inputNama').value = ""; document.getElementById('inputKupon').value = ""; document.getElementById('inputPesan').value = "";
-      renderPreview(); matikanKamera(); gantiHalaman('page0'); muatFeeds();
-    }
-
-    function gantiHalaman(idTujuan) {
-      document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-      document.getElementById(idTujuan).classList.add('active');
-      window.scrollTo(0,0); saveLokal(); 
-    }
-
-    document.addEventListener('click', function(e) {
-      if(!e.target.classList.contains('feed-message') && !e.target.classList.contains('btn-play')) {
-        document.querySelectorAll('.feed-message.expanded').forEach(el => { el.classList.remove('expanded'); });
-      }
-    });
-
-    let audioCtx = null; let currentAudioSource = null; let currentPlayingBtn = null;
-    function initAudioContext() { if (!audioCtx) { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); } if (audioCtx.state === 'suspended') { audioCtx.resume(); } }
-
-    function muatFeeds() {
-      const fetchUrl = API_URL + "?timestamp=" + new Date().getTime();
-      fetch(fetchUrl, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ action: "getFeeds", payload: {} }) })
-      .then(res => res.json())
-      .then(data => {
-        document.getElementById('feedLoading').style.display = 'none';
-        const grid = document.getElementById('feedGrid'); grid.innerHTML = "";
-        if(data.status === "success" && data.data.length > 0) {
-          data.data.forEach(item => {
-            const card = document.createElement('div'); card.className = 'feed-card';
-            const img = document.createElement('img'); img.src = item.imageUrl; img.loading = "lazy";
-            const overlay = document.createElement('div'); overlay.className = 'feed-overlay';
-            
-            const textContainer = document.createElement('div');
-            textContainer.style.flex = "1"; textContainer.style.paddingRight = "10px"; textContainer.style.overflow = "hidden"; 
-
-            const nameObj = document.createElement('div'); nameObj.className = 'feed-name'; nameObj.innerText = item.nama;
-            textContainer.appendChild(nameObj);
-
-            if(item.pesan) {
-              const msgObj = document.createElement('div'); msgObj.className = 'feed-message'; msgObj.innerText = '"' + item.pesan + '"';
-              msgObj.onclick = function(e) {
-                e.stopPropagation(); 
-                document.querySelectorAll('.feed-message.expanded').forEach(el => { if(el !== msgObj) el.classList.remove('expanded'); });
-                msgObj.classList.toggle('expanded');
-              };
-              textContainer.appendChild(msgObj);
-            }
-            overlay.appendChild(textContainer);
-            if(item.audioUrl) {
-              const btnAudio = document.createElement('div'); btnAudio.className = 'btn-play'; btnAudio.innerHTML = '▶';
-              btnAudio.onclick = () => mainkanAudioFeed(item.audioUrl, btnAudio); overlay.appendChild(btnAudio);
-            }
-            card.appendChild(img); card.appendChild(overlay); grid.appendChild(card);
-          });
-        } else {
-          grid.innerHTML = "<p style='grid-column: span 2; text-align: center; color: #888;'>Belum ada foto. Jadilah yang pertama!</p>";
-        }
-      }).catch(err => { document.getElementById('feedLoading').innerText = "Gagal memuat galeri."; });
     }
 
     function mainkanAudioFeed(base64Data, btnElement) {
@@ -1275,7 +625,6 @@
         } ctx.putImageData(imgData, FRAME_X, FRAME_Y);
       } ctx.restore();
       
-      // PERBAIKAN: Font dan Koordinat Teks diperbesar mengikuti resolusi HD
       ctx.fillStyle = "black"; ctx.font = "bold 60px Montserrat"; ctx.textAlign = "center"; 
       ctx.fillText(namaUser, canvas.width/2, 1080);
     }
@@ -1308,7 +657,11 @@
             clearLokal();
             namaUser = ""; kuponUser = ""; arrayFoto = []; audioBase64 = null; savedAudioUrl = ""; fotoTerpilih = null; filterSaatIni = "normal";
             document.getElementById('inputNama').value = ""; document.getElementById('inputKupon').value = ""; document.getElementById('inputPesan').value = "";
-            gantiHalaman('page0'); muatFeeds(); 
+            gantiHalaman('page0'); 
+            
+            // PERBAIKAN: Menghapus cache lokal agar saat upload foto baru, galeri merender ulang foto yang benar-benar terbaru dari server
+            localStorage.removeItem('photoboothGalleryCache');
+            muatFeeds(); 
           } else { throw new Error(data.message); }
         }).catch(error => {
           alert("Gagal memproses pengiriman: " + error.message);
