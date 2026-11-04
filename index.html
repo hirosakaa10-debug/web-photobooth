@@ -29,40 +29,20 @@
     input[type="file"] { display: none; }
     .btn-native { display: inline-block; background-color: var(--accent-color); color: white; padding: 15px 30px; margin: 10px 0; border-radius: 25px; font-family: 'Montserrat'; font-weight: 700; cursor: pointer; width: 80%; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
 
-    /* PERBAIKAN: Ruang scroll diperbesar (padding: 15px 10px) agar tombol X tidak terpotong tepi atas */
     .photo-grid { display: flex; gap: 15px; overflow-x: auto; margin-top: 10px; margin-bottom: 10px; padding: 15px 10px; }
     .photo-wrapper { position: relative; display: inline-block; }
     .photo-wrapper img { width: 60px; height: 80px; object-fit: cover; border-radius: 5px; border: 1px solid #ddd; }
-    
-    /* PERBAIKAN: Ukuran tombol X diperbesar, ditambah border putih, dan z-index agar lebih nyaman ditekan */
-    .btn-delete { 
-      position: absolute; 
-      top: -12px; 
-      right: -12px; 
-      background-color: #ff3b30; 
-      color: white; 
-      border: 2px solid white; 
-      border-radius: 50%; 
-      width: 30px; 
-      height: 30px; 
-      font-size: 14px; 
-      font-weight: bold; 
-      cursor: pointer; 
-      display: flex; 
-      justify-content: center; 
-      align-items: center; 
-      padding: 0; 
-      margin: 0; 
-      box-shadow: 0 4px 6px rgba(0,0,0,0.3); 
-      transition: background-color 0.2s;
-      z-index: 5;
-    }
+    .btn-delete { position: absolute; top: -12px; right: -12px; background-color: #ff3b30; color: white; border: 2px solid white; border-radius: 50%; width: 30px; height: 30px; font-size: 14px; font-weight: bold; cursor: pointer; display: flex; justify-content: center; align-items: center; padding: 0; margin: 0; box-shadow: 0 4px 6px rgba(0,0,0,0.3); transition: background-color 0.2s; z-index: 5; }
     
     .btn-delete-audio { background-color: transparent; color: red; border: 2px solid red; padding: 10px 20px; margin-top: 10px; border-radius: 20px; cursor: pointer; font-family: 'Montserrat'; font-weight: bold; display: none; width: auto; }
 
     .camera-polaroid-frame { width: 260px; height: 300px; margin: 0 auto 15px auto; background: #222; position: relative; overflow: hidden; border: 15px solid white; border-bottom: 50px solid white; box-shadow: 0 4px 10px rgba(0,0,0,0.2); border-radius: 2px; }
     #videoFeed { width: 100%; height: 100%; object-fit: cover; }
     
+    /* DESAIN EFEK FLASH KAMERA */
+    #flashEffect { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: white; opacity: 0; pointer-events: none; z-index: 10; transition: opacity 0.5s ease-out; }
+    .flash-active { opacity: 1 !important; transition: none !important; }
+
     #canvasContainer { position: relative; width: 300px; height: 400px; margin: 0 auto 15px auto; box-shadow: 0 4px 8px rgba(0,0,0,0.2); background: white; }
     #canvasFrame { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
     .loading { display: none; font-weight: bold; color: var(--accent-color); margin-top: 10px;}
@@ -108,6 +88,8 @@
     <div class="camera-polaroid-frame">
       <video id="videoFeed" autoplay playsinline></video>
       <canvas id="captureCanvas" width="260" height="300" style="display:none;"></canvas>
+      <!-- ELEMEN FLASH KAMERA -->
+      <div id="flashEffect"></div>
     </div>
     
     <div style="display: flex; justify-content: center; gap: 10px; margin-bottom: 10px; width: 100%; max-width: 330px; margin: 0 auto;">
@@ -120,9 +102,7 @@
       <input type="file" id="kameraNatif" accept="image/*" capture="user" onchange="prosesFotoNatif(event)">
     </div>
 
-    <!-- AREA PREVIEW FOTO HASIL JEPRET -->
     <div id="previewArea" class="photo-grid"></div>
-    
     <hr style="border: 1px solid #ddd; margin: 20px 0;">
 
     <h3>Tinggalkan Pesan Suara</h3>
@@ -148,7 +128,6 @@
   <!-- HALAMAN 3: PILIH FOTO UNTUK DIPRINT -->
   <div id="page3" class="page">
     <h3 style="color: var(--primary-color);">Pilih 1 Foto Publikasi</h3>
-    <!-- Tambahan padding atas di halaman pilih foto agar preview lebih rapi -->
     <div id="selectionGrid" style="display: flex; flex-wrap: wrap; gap: 15px; justify-content: center; padding-top: 10px;"></div>
     <button id="btnLanjutEdit" onclick="lanjutKeEdit()" class="accent" style="margin-top: 20px;">Lanjut Edit</button>
   </div>
@@ -199,7 +178,7 @@
     }
 
     // =========================================================================
-    // LOGIKA PEMUTAR AUDIO API
+    // LOGIKA PEMUTAR AUDIO API (ANTI CACHE SAFARI & ANTI BLOKIR)
     // =========================================================================
     let audioCtx = null;
     let currentAudioSource = null;
@@ -276,34 +255,22 @@
     async function mulaiKamera() {
       const video = document.getElementById('videoFeed');
       const btnPutar = document.getElementById('btnPutarKamera');
-      
       if(btnPutar) { btnPutar.disabled = true; btnPutar.innerText = "⏳..."; }
 
-      if (videoStream) { 
-        videoStream.getTracks().forEach(track => track.stop()); 
-        videoStream = null; 
-      }
+      if (videoStream) { videoStream.getTracks().forEach(track => track.stop()); videoStream = null; }
       video.srcObject = null;
 
       try {
-        videoStream = await navigator.mediaDevices.getUserMedia({ 
-          video: { facingMode: facingMode, width: { ideal: 1080 }, height: { ideal: 1920 } } 
-        });
-        
+        videoStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: facingMode, width: { ideal: 1080 }, height: { ideal: 1920 } } });
         video.srcObject = videoStream;
         video.style.transform = facingMode === "user" ? "scaleX(-1)" : "scaleX(1)";
         document.getElementById('fallbackKameraUpload').style.display = "none";
-        
         video.onloadedmetadata = () => {
-          video.play().then(() => {
-             if(btnPutar) { btnPutar.disabled = false; btnPutar.innerText = "🔄 Putar"; }
-          }).catch(e => {
-             if(btnPutar) { btnPutar.disabled = false; btnPutar.innerText = "🔄 Putar"; }
-          });
+          video.play().then(() => { if(btnPutar) { btnPutar.disabled = false; btnPutar.innerText = "🔄 Putar"; }
+          }).catch(e => { if(btnPutar) { btnPutar.disabled = false; btnPutar.innerText = "🔄 Putar"; } });
         };
       } catch (err) {
-        console.error("Kamera diblokir/error:", err);
-        document.getElementById('fallbackKameraUpload').style.display = "block";
+        console.error("Kamera diblokir/error:", err); document.getElementById('fallbackKameraUpload').style.display = "block";
         if(btnPutar) { btnPutar.disabled = false; btnPutar.innerText = "🔄 Putar"; }
       }
     }
@@ -313,9 +280,27 @@
 
     function jepretKameraWeb() {
       if(arrayFoto.length >= 5) return; 
-      
       const video = document.getElementById('videoFeed'); if (!video.videoWidth) return; 
       
+      // 1. EFEK SUARA CEKREK (Anti Blokir iOS)
+      try {
+        initAudioContext();
+        const osc = audioCtx.createOscillator(); const gain = audioCtx.createGain();
+        osc.connect(gain); gain.connect(audioCtx.destination);
+        osc.type = 'square'; osc.frequency.setValueAtTime(800, audioCtx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(40, audioCtx.currentTime + 0.1);
+        gain.gain.setValueAtTime(0.5, audioCtx.currentTime); gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.1);
+        osc.start(audioCtx.currentTime); osc.stop(audioCtx.currentTime + 0.1);
+      } catch(e) {}
+      
+      // 2. EFEK FLASH VISUAL
+      const flash = document.getElementById('flashEffect');
+      flash.classList.add('flash-active');
+      setTimeout(() => flash.classList.remove('flash-active'), 50);
+
+      // 3. EFEK FREEZE KAMERA (Beku selama 1 detik)
+      video.pause();
+
       const canvas = document.getElementById('captureCanvas'); const ctx = canvas.getContext('2d');
       const targetWidth = canvas.width; const targetHeight = canvas.height;  
       const videoRatio = video.videoWidth / video.videoHeight; const targetRatio = targetWidth / targetHeight;
@@ -334,6 +319,9 @@
       ctx.restore();
       
       arrayFoto.push(canvas.toDataURL('image/jpeg', 0.9)); renderPreview();
+
+      // Nyalakan kembali kamera setelah 1 detik
+      setTimeout(() => { video.play(); }, 1000);
     }
 
     function verifikasiLogin() {
@@ -341,29 +329,19 @@
       kuponUser = document.getElementById('inputKupon').value.trim();
       
       if(namaUser === "" || kuponUser === "") { 
-        const btn = document.getElementById('btnLogin');
-        const oldText = btn.innerText;
-        btn.innerText = "⚠️ Nama & Kupon Wajib Diisi!";
-        btn.style.backgroundColor = "orange";
-        setTimeout(() => { btn.innerText = oldText; btn.style.backgroundColor = ""; }, 3000);
-        return; 
+        const btn = document.getElementById('btnLogin'); const oldText = btn.innerText;
+        btn.innerText = "⚠️ Nama & Kupon Wajib Diisi!"; btn.style.backgroundColor = "orange";
+        setTimeout(() => { btn.innerText = oldText; btn.style.backgroundColor = ""; }, 3000); return; 
       }
-      
       gantiHalaman('page2'); mulaiKamera(); 
     }
 
     function renderPreview() {
       const previewArea = document.getElementById('previewArea'); previewArea.innerHTML = ""; 
-      
       const btnJepret = document.getElementById('btnJepretWeb');
       if (btnJepret) {
-        if (arrayFoto.length >= 5) {
-          btnJepret.disabled = true;
-          btnJepret.innerHTML = "📸 Penuh (5/5)";
-        } else {
-          btnJepret.disabled = false;
-          btnJepret.innerHTML = "📸 Jepret (" + arrayFoto.length + "/5)";
-        }
+        if (arrayFoto.length >= 5) { btnJepret.disabled = true; btnJepret.innerHTML = "📸 Penuh (5/5)";
+        } else { btnJepret.disabled = false; btnJepret.innerHTML = "📸 Jepret (" + arrayFoto.length + "/5)"; }
       }
 
       arrayFoto.forEach((src, index) => {
@@ -373,16 +351,10 @@
         
         btnDelete.onclick = function() {
           if(this.innerHTML === '✕') {
-             this.innerHTML = '?'; 
-             this.style.backgroundColor = 'orange';
-             setTimeout(() => { 
-                if(this) { this.innerHTML = '✕'; this.style.backgroundColor = '#ff3b30'; }
-             }, 3000); 
-          } else {
-             arrayFoto.splice(index, 1); renderPreview(); 
-          }
+             this.innerHTML = '?'; this.style.backgroundColor = 'orange';
+             setTimeout(() => { if(this) { this.innerHTML = '✕'; this.style.backgroundColor = '#ff3b30'; } }, 3000); 
+          } else { arrayFoto.splice(index, 1); renderPreview(); }
         };
-        
         wrapper.appendChild(imgEl); wrapper.appendChild(btnDelete); previewArea.appendChild(wrapper);
       });
     }
@@ -455,12 +427,9 @@
     // --- PENYIMPANAN KE GOOGLE ---
     function simpanKeDrive() {
       if(arrayFoto.length === 0 && !audioBase64) { 
-        const btn = document.getElementById('btnSimpanDrive');
-        const oldText = btn.innerText;
-        btn.innerText = "⚠️ Ambil minimal 1 foto/suara!";
-        btn.style.backgroundColor = "orange";
-        setTimeout(() => { btn.innerText = oldText; btn.style.backgroundColor = ""; }, 3000);
-        return; 
+        const btn = document.getElementById('btnSimpanDrive'); const oldText = btn.innerText;
+        btn.innerText = "⚠️ Ambil minimal 1 foto/suara!"; btn.style.backgroundColor = "orange";
+        setTimeout(() => { btn.innerText = oldText; btn.style.backgroundColor = ""; }, 3000); return; 
       }
       
       const btnSave = document.getElementById('btnSimpanDrive'); btnSave.disabled = true; btnSave.innerText = "Menyimpan... Mohon Tunggu";
@@ -502,12 +471,9 @@
 
     function lanjutKeEdit() { 
       if(!fotoTerpilih) { 
-        const btn = document.getElementById('btnLanjutEdit');
-        const oldText = btn.innerText;
-        btn.innerText = "⚠️ Pilih 1 Foto!";
-        btn.style.backgroundColor = "orange";
-        setTimeout(() => { btn.innerText = oldText; btn.style.backgroundColor = ""; }, 3000);
-        return; 
+        const btn = document.getElementById('btnLanjutEdit'); const oldText = btn.innerText;
+        btn.innerText = "⚠️ Pilih 1 Foto!"; btn.style.backgroundColor = "orange";
+        setTimeout(() => { btn.innerText = oldText; btn.style.backgroundColor = ""; }, 3000); return; 
       } 
       gantiHalaman('page4'); terapkanFilter('normal'); inisialisasiEditFoto(); 
     }
@@ -586,8 +552,7 @@
             namaUser = ""; kuponUser = ""; arrayFoto = []; audioBase64 = null; savedAudioUrl = ""; fotoTerpilih = null;
             document.getElementById('inputNama').value = ""; document.getElementById('inputKupon').value = "";
             
-            gantiHalaman('page0');
-            muatFeeds(); 
+            gantiHalaman('page0'); muatFeeds(); 
           } else { throw new Error(data.message); }
         })
         .catch(error => {
