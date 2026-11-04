@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>Virtual Photobooth</title>
-  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700;900&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;700;900&display=swap" rel="stylesheet">
   <style>
     :root {
       --bg-color: #f4f4f9;
@@ -16,7 +16,12 @@
     body { font-family: 'Montserrat', sans-serif; background-color: var(--bg-color); color: var(--text-color); margin: 0; padding: 20px; text-align: center; display: flex; flex-direction: column; align-items: center; overscroll-behavior-y: contain; }
     .page { display: none; width: 100%; max-width: 500px; } 
     .active { display: block; }
-    input[type="text"] { width: 90%; padding: 15px; margin: 10px 0; border: 2px solid var(--primary-color); border-radius: 10px; font-family: 'Montserrat'; font-weight: 700; }
+    
+    input[type="text"] { width: 90%; padding: 15px; margin: 10px 0; border: 2px solid var(--primary-color); border-radius: 10px; font-family: 'Montserrat'; font-weight: 700; box-sizing: border-box; }
+    
+    /* GAYA BARU: KOTAK PESAN TEKS */
+    textarea { width: 90%; padding: 15px; margin: 10px 0; border: 2px solid var(--primary-color); border-radius: 10px; font-family: 'Montserrat'; font-weight: 500; resize: none; box-sizing: border-box; }
+
     button { background-color: var(--primary-color); color: white; border: none; padding: 15px 30px; margin: 10px 5px; border-radius: 25px; font-family: 'Montserrat'; font-weight: 700; cursor: pointer; width: 95%; box-shadow: 0 4px 6px rgba(0,0,0,0.1); transition: background-color 0.3s; }
     button:active { transform: scale(0.98); }
     button.accent { background-color: var(--accent-color); }
@@ -47,17 +52,32 @@
     .loading { display: none; font-weight: bold; color: var(--accent-color); margin-top: 10px;}
     .iphone-warning { font-size: 11px; color: #d9534f; background: #fdf2f2; border: 1px solid #f5c6cb; padding: 10px; border-radius: 8px; margin-top: 10px; text-align: left; line-height: 1.4; }
 
-    /* DESAIN GALERI LIVE FEEDS */
+    /* DESAIN GALERI LIVE FEEDS DENGAN TEKS PESAN */
     .feed-container { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; padding-top: 10px; }
     .feed-card { position: relative; border-radius: 12px; overflow: hidden; background: #222; aspect-ratio: 3/4; box-shadow: 0 4px 10px rgba(0,0,0,0.15); }
     .feed-card img { width: 100%; height: 100%; object-fit: cover; }
     .feed-overlay { position: absolute; bottom: 0; left: 0; right: 0; background: linear-gradient(to top, rgba(0,0,0,0.85), transparent); padding: 25px 12px 12px 12px; display: flex; justify-content: space-between; align-items: flex-end; }
     .feed-name { color: white; font-weight: bold; font-size: 13px; text-shadow: 1px 1px 3px rgba(0,0,0,0.8); text-align: left; }
-    .btn-play { background: rgba(255,255,255,0.25); border: 1px solid rgba(255,255,255,0.5); backdrop-filter: blur(4px); border-radius: 50%; width: 32px; height: 32px; display: flex; justify-content: center; align-items: center; cursor: pointer; color: white; font-size: 14px; }
+    
+    /* GAYA BARU UNTUK TEKS PESAN DI FEEDS (Sesuai Referensi) */
+    .feed-message {
+      color: rgba(255, 255, 255, 0.9);
+      font-size: 10px;
+      font-style: italic;
+      margin-top: 5px;
+      border-left: 2px solid #FFC107; /* Aksen garis kuning/emas */
+      padding-left: 6px;
+      text-align: left;
+      display: -webkit-box;
+      -webkit-line-clamp: 2; /* Batasi maksimal 2 baris agar tidak merusak tata letak */
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+      line-height: 1.3;
+    }
+
+    .btn-play { background: rgba(255,255,255,0.25); border: 1px solid rgba(255,255,255,0.5); backdrop-filter: blur(4px); border-radius: 50%; width: 32px; height: 32px; display: flex; justify-content: center; align-items: center; cursor: pointer; color: white; font-size: 14px; flex-shrink: 0; }
   </style>
 </head>
-
-<!-- PERUBAHAN: Memanggil fungsi initApp() saat halaman web dimuat ulang/direfresh -->
 <body onload="initApp()">
 
   <!-- HALAMAN 0: LIVE FEEDS GALERI -->
@@ -81,7 +101,7 @@
     <button id="btnLogin" onclick="verifikasiLogin()">Lanjut</button>
   </div>
 
-  <!-- HALAMAN 2: CAMERA & VOICE -->
+  <!-- HALAMAN 2: CAMERA, VOICE, & TEXT -->
   <div id="page2" class="page">
     <h3 style="color: var(--primary-color); margin-bottom: 5px;">Ambil Momenmu</h3>
     <p style="font-size: 11px; margin-top: 0; margin-bottom: 15px;">Posisikan senyummu di dalam bingkai polaroid</p>
@@ -103,9 +123,14 @@
     </div>
 
     <div id="previewArea" class="photo-grid"></div>
+    
     <hr style="border: 1px solid #ddd; margin: 20px 0;">
+    
+    <!-- KOLOM PESAN TEKS BARU -->
+    <h3 style="color: var(--primary-color); margin-bottom: 0;">Pesan Singkat (Opsional)</h3>
+    <textarea id="inputPesan" placeholder="Tulis ucapan selamat atau kesan pesan di sini..." rows="2" oninput="saveLokal()"></textarea>
 
-    <h3>Tinggalkan Pesan Suara</h3>
+    <h3 style="color: var(--primary-color); margin-bottom: 0; margin-top: 15px;">Pesan Suara (Opsional)</h3>
     <p style="font-size: 12px; margin-top: 0;">Maksimal 30 Detik</p>
     <button id="btnRekam" onclick="toggleRekam()">🎙️ Mulai Rekam</button>
     
@@ -119,8 +144,8 @@
       <audio id="audioPlayback" controls style="width:100%;"></audio>
       <button class="btn-delete-audio" id="btnHapusAudio" onclick="hapusAudio()">🗑️ Hapus Rekaman</button>
     </div>
-    <hr style="border: 1px solid #ddd; margin: 20px 0;">
     
+    <hr style="border: 1px solid #ddd; margin: 20px 0;">
     <button id="btnSimpanDrive" onclick="simpanKeDrive()">💾 Save (Simpan Semua)</button>
     <div id="loadingSave" class="loading">Mengirim ke server... Mohon tunggu.</div>
   </div>
@@ -172,16 +197,16 @@
     const FRAME_X = 20, FRAME_Y = 20, FRAME_WIDTH = 260, FRAME_HEIGHT = 300;
 
     // =========================================================================
-    // FITUR ANTI REFRESH (PENYIMPANAN LOCAL STORAGE BROWSER)
+    // FITUR ANTI REFRESH (Penyimpanan Local Storage)
     // =========================================================================
     function saveLokal() {
       const pageActive = document.querySelector('.page.active').id;
-      // Jangan simpan status kalau pengunjung masih di halaman awal atau akhir
       if (pageActive === 'page0' || pageActive === 'page5') return;
       
       const state = {
         namaUser: document.getElementById('inputNama').value.trim(),
         kuponUser: document.getElementById('inputKupon').value.trim(),
+        pesanUser: document.getElementById('inputPesan').value.trim(), // Menyimpan ketikan pesan teks
         arrayFoto: arrayFoto,
         audioBase64: audioBase64,
         savedAudioUrl: savedAudioUrl,
@@ -192,11 +217,8 @@
       localStorage.setItem('photoboothState', JSON.stringify(state));
     }
 
-    function clearLokal() {
-      localStorage.removeItem('photoboothState');
-    }
+    function clearLokal() { localStorage.removeItem('photoboothState'); }
 
-    // Fungsi Utama yang menyala setiap kali website di-refresh
     function initApp() {
       const saved = localStorage.getItem('photoboothState');
       let isResuming = false;
@@ -205,9 +227,10 @@
         try {
           const state = JSON.parse(saved);
           if (state.currentPage && state.currentPage !== 'page0' && state.currentPage !== 'page5') {
-            // Mengembalikan Data yang belum selesai
             namaUser = state.namaUser || "";
             kuponUser = state.kuponUser || "";
+            let pesanUser = state.pesanUser || ""; // Mengambil ketikan memori teks
+            
             arrayFoto = state.arrayFoto || [];
             audioBase64 = state.audioBase64 || null;
             savedAudioUrl = state.savedAudioUrl || "";
@@ -216,11 +239,10 @@
             
             document.getElementById('inputNama').value = namaUser;
             document.getElementById('inputKupon').value = kuponUser;
+            document.getElementById('inputPesan').value = pesanUser;
             
-            // Pindah paksa ke halaman terakhir mereka diam
             gantiHalaman(state.currentPage);
             
-            // Render elemen-elemen sesuai dengan halamannya
             if (arrayFoto.length > 0) renderPreview();
             if (audioBase64) {
               document.getElementById('audioPlayback').src = audioBase64;
@@ -231,44 +253,36 @@
             if (state.currentPage === 'page2') {
               mulaiKamera();
             } else if (state.currentPage === 'page3') {
-              siapkanHalamanPrintLokal(); // Panggil fungsi render grid tanpa pindah halaman lagi
+              siapkanHalamanPrintLokal();
             } else if (state.currentPage === 'page4') {
               terapkanFilter(filterSaatIni);
               inisialisasiEditFoto();
             }
             isResuming = true;
           }
-        } catch (e) { console.error("Gagal memuat memori lokal:", e); }
+        } catch (e) { console.error(e); }
       }
       
-      // Jika tidak ada data tersimpan, tampilkan Live Feeds seperti biasa
-      if (!isResuming) {
-        muatFeeds();
-      }
+      if (!isResuming) { muatFeeds(); }
     }
 
-    // Fungsi pembatalan sesi jika tombol "Kembali ke Feeds" ditekan
     function batalkanSesi() {
       if (arrayFoto.length > 0 || audioBase64) {
-        const yakin = confirm("Anda memiliki foto atau rekaman yang belum disave. Yakin ingin keluar? (Data akan hilang)");
+        const yakin = confirm("Anda memiliki memori yang belum tersimpan. Yakin ingin keluar?");
         if (!yakin) return;
       }
       clearLokal();
       namaUser = ""; kuponUser = ""; arrayFoto = []; audioBase64 = null; savedAudioUrl = ""; fotoTerpilih = null; filterSaatIni = "normal";
       document.getElementById('inputNama').value = ""; document.getElementById('inputKupon').value = "";
-      renderPreview();
-      matikanKamera();
-      gantiHalaman('page0');
-      muatFeeds();
+      document.getElementById('inputPesan').value = ""; // Mengosongkan form teks
+      renderPreview(); matikanKamera(); gantiHalaman('page0'); muatFeeds();
     }
 
     function gantiHalaman(idTujuan) {
       document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
       document.getElementById(idTujuan).classList.add('active');
-      window.scrollTo(0,0);
-      saveLokal(); // Auto-save saat pindah halaman
+      window.scrollTo(0,0); saveLokal(); 
     }
-    // =========================================================================
 
     let audioCtx = null; let currentAudioSource = null; let currentPlayingBtn = null;
     function initAudioContext() { if (!audioCtx) { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); } if (audioCtx.state === 'suspended') { audioCtx.resume(); } }
@@ -286,13 +300,31 @@
             const card = document.createElement('div'); card.className = 'feed-card';
             const img = document.createElement('img'); img.src = item.imageUrl; img.loading = "lazy";
             const overlay = document.createElement('div'); overlay.className = 'feed-overlay';
+            
+            // Container khusus untuk membungkus nama dan teks pesan agar tidak menumpuk ke tombol play
+            const textContainer = document.createElement('div');
+            textContainer.style.flex = "1";
+            textContainer.style.paddingRight = "10px";
+            textContainer.style.overflow = "hidden";
+
             const nameObj = document.createElement('div'); nameObj.className = 'feed-name'; nameObj.innerText = item.nama;
-            overlay.appendChild(nameObj);
+            textContainer.appendChild(nameObj);
+
+            // Merender teks pesan jika tamu mengisinya
+            if(item.pesan) {
+              const msgObj = document.createElement('div'); 
+              msgObj.className = 'feed-message'; 
+              msgObj.innerText = '"' + item.pesan + '"';
+              textContainer.appendChild(msgObj);
+            }
+            
+            overlay.appendChild(textContainer);
 
             if(item.audioUrl) {
               const btnAudio = document.createElement('div'); btnAudio.className = 'btn-play'; btnAudio.innerHTML = '▶';
               btnAudio.onclick = () => mainkanAudioFeed(item.audioUrl, btnAudio); overlay.appendChild(btnAudio);
             }
+            
             card.appendChild(img); card.appendChild(overlay); grid.appendChild(card);
           });
         } else {
@@ -375,8 +407,7 @@
       ctx.restore();
       
       arrayFoto.push(canvas.toDataURL('image/jpeg', 0.9)); 
-      renderPreview();
-      saveLokal(); // Simpan foto langsung ke memori lokal
+      renderPreview(); saveLokal(); 
       setTimeout(() => { video.play(); }, 1000);
     }
 
@@ -407,11 +438,7 @@
           if(this.innerHTML === '✕') {
              this.innerHTML = '?'; this.style.backgroundColor = 'orange';
              setTimeout(() => { if(this) { this.innerHTML = '✕'; this.style.backgroundColor = '#ff3b30'; } }, 3000); 
-          } else { 
-             arrayFoto.splice(index, 1); 
-             renderPreview(); 
-             saveLokal(); // Hapus file dari memori lokal
-          }
+          } else { arrayFoto.splice(index, 1); renderPreview(); saveLokal(); }
         };
         wrapper.appendChild(imgEl); wrapper.appendChild(btnDelete); previewArea.appendChild(wrapper);
       });
@@ -450,7 +477,7 @@
               audioBase64 = reader.result; const playback = document.getElementById('audioPlayback');
               playback.src = audioBase64; playback.load(); 
               document.getElementById('audioContainer').style.display = 'flex'; document.getElementById('btnHapusAudio').style.display = 'block';
-              saveLokal(); // Simpan suara ke memori lokal
+              saveLokal(); 
             };
             reader.readAsDataURL(audioBlob); stream.getTracks().forEach(track => track.stop());
           };
@@ -483,9 +510,12 @@
     }
 
     function simpanKeDrive() {
-      if(arrayFoto.length === 0 && !audioBase64) { 
+      const pesanTeks = document.getElementById('inputPesan').value.trim();
+      
+      // Bisa simpan asalkan ADA foto, ATAU ADA audio, ATAU ADA pesan
+      if(arrayFoto.length === 0 && !audioBase64 && pesanTeks === "") { 
         const btn = document.getElementById('btnSimpanDrive'); const oldText = btn.innerText;
-        btn.innerText = "⚠️ Ambil minimal 1 foto/suara!"; btn.style.backgroundColor = "orange";
+        btn.innerText = "⚠️ Hasilkan minimal 1 foto/suara/pesan!"; btn.style.backgroundColor = "orange";
         setTimeout(() => { btn.innerText = oldText; btn.style.backgroundColor = ""; }, 3000); return; 
       }
       
@@ -504,7 +534,7 @@
           savedAudioUrl = data.data.audioUrl || "";
           document.getElementById('loadingSave').style.display = 'none';
           btnSave.disabled = false; btnSave.innerText = "💾 Save (Simpan Semua)";
-          siapkanHalamanPrint(); // Pindah halaman dan otomatis autosave
+          siapkanHalamanPrint(); 
         } else { throw new Error(data.message); }
       })
       .catch(error => {
@@ -515,6 +545,15 @@
 
     function siapkanHalamanPrintLokal() {
       const grid = document.getElementById('selectionGrid'); grid.innerHTML = "";
+      
+      // Tambahkan kondisi khusus: Jika tamu HANYA mengirim suara/pesan teks (tanpa foto sama sekali)
+      if (arrayFoto.length === 0) {
+         // Langsung konfirmasi lompat ke publikasi akhir
+         fotoTerpilih = "HanyaTeksSuara";
+         lanjutKeEdit();
+         return;
+      }
+      
       arrayFoto.forEach((src) => {
         const img = document.createElement('img'); img.src = src; img.style.width = "100px"; img.style.borderRadius = "10px"; img.style.cursor = "pointer";
         if(fotoTerpilih === src) img.style.border = "4px solid var(--accent-color)";
@@ -523,9 +562,7 @@
       });
     }
 
-    function siapkanHalamanPrint() {
-      matikanKamera(); gantiHalaman('page3'); siapkanHalamanPrintLokal();
-    }
+    function siapkanHalamanPrint() { matikanKamera(); gantiHalaman('page3'); siapkanHalamanPrintLokal(); }
 
     function lanjutKeEdit() { 
       if(!fotoTerpilih) { 
@@ -533,6 +570,13 @@
         btn.innerText = "⚠️ Pilih 1 Foto!"; btn.style.backgroundColor = "orange";
         setTimeout(() => { btn.innerText = oldText; btn.style.backgroundColor = ""; }, 3000); return; 
       } 
+      
+      // Jika tamu tadi HANYA menyetor suara/teks tanpa foto, otomatis cetak
+      if(fotoTerpilih === "HanyaTeksSuara") {
+         konfirmasiCetak(true); // Bypass
+         return;
+      }
+      
       gantiHalaman('page4'); terapkanFilter('normal'); inisialisasiEditFoto(); 
     }
     
@@ -584,18 +628,31 @@
       if(tipe === 'polaroid') document.getElementById('btnPolaroid').classList.add('active-filter');
       else if (tipe === 'digicam') document.getElementById('btnDigicam').classList.add('active-filter');
       else document.getElementById('btnNormal').classList.add('active-filter');
-      gambarDiCanvas();
-      saveLokal();
+      gambarDiCanvas(); saveLokal();
     }
 
-    function konfirmasiCetak() {
-      const yakin = confirm("Kirim foto ini ke Galeri Live Feeds?");
+    function konfirmasiCetak(isBypass = false) {
+      const yakin = isBypass ? true : confirm("Kirim data ini ke Galeri Live Feeds?");
       if(yakin) {
-        const btnPrint = document.getElementById('btnKonfirmasiCetak'); btnPrint.disabled = true; btnPrint.innerText = "Memproses...";
-        document.getElementById('loadingPrint').style.display = 'block';
+        let finalImage = "";
         
-        const finalImage = document.getElementById('canvasFrame').toDataURL('image/jpeg', 0.9);
-        const payload = { image: finalImage, kupon: kuponUser, nama: namaUser, audioUrl: savedAudioUrl };
+        // Pengecekan: Jika bukan keadaan mem-bypass foto kosong, buat gambar finalnya
+        if (!isBypass) {
+          const btnPrint = document.getElementById('btnKonfirmasiCetak'); btnPrint.disabled = true; btnPrint.innerText = "Memproses...";
+          document.getElementById('loadingPrint').style.display = 'block';
+          finalImage = document.getElementById('canvasFrame').toDataURL('image/jpeg', 0.9);
+        }
+
+        const pesanTeks = document.getElementById('inputPesan').value.trim(); // Tangkap Teks yang diketik
+        
+        // Payload akhir dengan data teks
+        const payload = { 
+          image: finalImage, 
+          kupon: kuponUser, 
+          nama: namaUser, 
+          audioUrl: savedAudioUrl,
+          pesan: pesanTeks 
+        };
         
         fetch(API_URL, {
           method: 'POST',
@@ -605,21 +662,26 @@
         .then(response => response.json())
         .then(data => {
           if(data.status === "success") {
-            document.getElementById('loadingPrint').style.display = 'none'; 
-            btnPrint.disabled = false; btnPrint.innerText = "Kirim Ke Live Feeds"; 
+            if(!isBypass) {
+              document.getElementById('loadingPrint').style.display = 'none'; 
+              document.getElementById('btnKonfirmasiCetak').disabled = false; 
+              document.getElementById('btnKonfirmasiCetak').innerText = "Kirim Ke Live Feeds";
+            } 
             
-            // Selesai - Kosongkan semua memori untuk tamu berikutnya
             clearLokal();
             namaUser = ""; kuponUser = ""; arrayFoto = []; audioBase64 = null; savedAudioUrl = ""; fotoTerpilih = null; filterSaatIni = "normal";
-            document.getElementById('inputNama').value = ""; document.getElementById('inputKupon').value = "";
+            document.getElementById('inputNama').value = ""; document.getElementById('inputKupon').value = ""; document.getElementById('inputPesan').value = "";
             
-            gantiHalaman('page0');
-            muatFeeds(); 
+            gantiHalaman('page0'); muatFeeds(); 
           } else { throw new Error(data.message); }
         })
         .catch(error => {
-          alert("Gagal memproses cetak: " + error.message);
-          document.getElementById('loadingPrint').style.display = 'none'; btnPrint.disabled = false; btnPrint.innerText = "Kirim Ke Live Feeds";
+          alert("Gagal memproses pengiriman: " + error.message);
+          if(!isBypass) {
+             document.getElementById('loadingPrint').style.display = 'none'; 
+             document.getElementById('btnKonfirmasiCetak').disabled = false; 
+             document.getElementById('btnKonfirmasiCetak').innerText = "Kirim Ke Live Feeds";
+          }
         });
       }
     }
