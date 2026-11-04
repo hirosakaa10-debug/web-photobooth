@@ -29,10 +29,34 @@
     input[type="file"] { display: none; }
     .btn-native { display: inline-block; background-color: var(--accent-color); color: white; padding: 15px 30px; margin: 10px 0; border-radius: 25px; font-family: 'Montserrat'; font-weight: 700; cursor: pointer; width: 80%; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
 
-    .photo-grid { display: flex; gap: 10px; overflow-x: auto; margin-top: 15px; margin-bottom: 15px; padding-bottom: 10px; }
+    /* PERBAIKAN: Ruang scroll diperbesar (padding: 15px 10px) agar tombol X tidak terpotong tepi atas */
+    .photo-grid { display: flex; gap: 15px; overflow-x: auto; margin-top: 10px; margin-bottom: 10px; padding: 15px 10px; }
     .photo-wrapper { position: relative; display: inline-block; }
-    .photo-wrapper img { width: 60px; height: 80px; object-fit: cover; border-radius: 5px; border: 2px solid transparent; }
-    .btn-delete { position: absolute; top: -8px; right: -8px; background-color: red; color: white; border: none; border-radius: 50%; width: 24px; height: 24px; font-size: 12px; font-weight: bold; cursor: pointer; display: flex; justify-content: center; align-items: center; padding: 0; margin: 0; box-shadow: 0 2px 4px rgba(0,0,0,0.3); transition: background-color 0.2s; }
+    .photo-wrapper img { width: 60px; height: 80px; object-fit: cover; border-radius: 5px; border: 1px solid #ddd; }
+    
+    /* PERBAIKAN: Ukuran tombol X diperbesar, ditambah border putih, dan z-index agar lebih nyaman ditekan */
+    .btn-delete { 
+      position: absolute; 
+      top: -12px; 
+      right: -12px; 
+      background-color: #ff3b30; 
+      color: white; 
+      border: 2px solid white; 
+      border-radius: 50%; 
+      width: 30px; 
+      height: 30px; 
+      font-size: 14px; 
+      font-weight: bold; 
+      cursor: pointer; 
+      display: flex; 
+      justify-content: center; 
+      align-items: center; 
+      padding: 0; 
+      margin: 0; 
+      box-shadow: 0 4px 6px rgba(0,0,0,0.3); 
+      transition: background-color 0.2s;
+      z-index: 5;
+    }
     
     .btn-delete-audio { background-color: transparent; color: red; border: 2px solid red; padding: 10px 20px; margin-top: 10px; border-radius: 20px; cursor: pointer; font-family: 'Montserrat'; font-weight: bold; display: none; width: auto; }
 
@@ -96,7 +120,9 @@
       <input type="file" id="kameraNatif" accept="image/*" capture="user" onchange="prosesFotoNatif(event)">
     </div>
 
+    <!-- AREA PREVIEW FOTO HASIL JEPRET -->
     <div id="previewArea" class="photo-grid"></div>
+    
     <hr style="border: 1px solid #ddd; margin: 20px 0;">
 
     <h3>Tinggalkan Pesan Suara</h3>
@@ -122,7 +148,8 @@
   <!-- HALAMAN 3: PILIH FOTO UNTUK DIPRINT -->
   <div id="page3" class="page">
     <h3 style="color: var(--primary-color);">Pilih 1 Foto Publikasi</h3>
-    <div id="selectionGrid" style="display: flex; flex-wrap: wrap; gap: 10px; justify-content: center;"></div>
+    <!-- Tambahan padding atas di halaman pilih foto agar preview lebih rapi -->
+    <div id="selectionGrid" style="display: flex; flex-wrap: wrap; gap: 15px; justify-content: center; padding-top: 10px;"></div>
     <button id="btnLanjutEdit" onclick="lanjutKeEdit()" class="accent" style="margin-top: 20px;">Lanjut Edit</button>
   </div>
 
@@ -285,7 +312,6 @@
     function matikanKamera() { if (videoStream) { videoStream.getTracks().forEach(track => track.stop()); videoStream = null; } }
 
     function jepretKameraWeb() {
-      // PERBAIKAN: Hapus alert() yang menyebabkan kamera mati
       if(arrayFoto.length >= 5) return; 
       
       const video = document.getElementById('videoFeed'); if (!video.videoWidth) return; 
@@ -314,7 +340,6 @@
       namaUser = document.getElementById('inputNama').value.trim();
       kuponUser = document.getElementById('inputKupon').value.trim();
       
-      // PERBAIKAN: Ganti alert() dengan notifikasi halus pada tombol
       if(namaUser === "" || kuponUser === "") { 
         const btn = document.getElementById('btnLogin');
         const oldText = btn.innerText;
@@ -330,7 +355,6 @@
     function renderPreview() {
       const previewArea = document.getElementById('previewArea'); previewArea.innerHTML = ""; 
       
-      // PERBAIKAN: Matikan tombol Jepret secara halus jika sudah 5 foto
       const btnJepret = document.getElementById('btnJepretWeb');
       if (btnJepret) {
         if (arrayFoto.length >= 5) {
@@ -352,7 +376,7 @@
              this.innerHTML = '?'; 
              this.style.backgroundColor = 'orange';
              setTimeout(() => { 
-                if(this) { this.innerHTML = '✕'; this.style.backgroundColor = 'red'; }
+                if(this) { this.innerHTML = '✕'; this.style.backgroundColor = '#ff3b30'; }
              }, 3000); 
           } else {
              arrayFoto.splice(index, 1); renderPreview(); 
@@ -430,7 +454,6 @@
 
     // --- PENYIMPANAN KE GOOGLE ---
     function simpanKeDrive() {
-      // PERBAIKAN: Ganti alert() dengan notifikasi halus pada tombol
       if(arrayFoto.length === 0 && !audioBase64) { 
         const btn = document.getElementById('btnSimpanDrive');
         const oldText = btn.innerText;
@@ -478,7 +501,6 @@
     }
 
     function lanjutKeEdit() { 
-      // PERBAIKAN: Ganti alert() dengan notifikasi halus pada tombol
       if(!fotoTerpilih) { 
         const btn = document.getElementById('btnLanjutEdit');
         const oldText = btn.innerText;
@@ -542,7 +564,6 @@
     }
 
     function konfirmasiCetak() {
-      // Tombol Cetak tetap dibiarkan ada confirm karena merupakan aksi Final
       const yakin = confirm("Kirim foto ini ke Galeri Live Feeds?");
       if(yakin) {
         const btnPrint = document.getElementById('btnKonfirmasiCetak'); btnPrint.disabled = true; btnPrint.innerText = "Memproses...";
@@ -562,7 +583,6 @@
             document.getElementById('loadingPrint').style.display = 'none'; 
             btnPrint.disabled = false; btnPrint.innerText = "Kirim Ke Live Feeds"; 
             
-            // Mengganti alert sukses dengan kembali langsung ke halaman Feeds
             namaUser = ""; kuponUser = ""; arrayFoto = []; audioBase64 = null; savedAudioUrl = ""; fotoTerpilih = null;
             document.getElementById('inputNama').value = ""; document.getElementById('inputKupon').value = "";
             
