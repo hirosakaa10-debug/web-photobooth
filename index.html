@@ -87,7 +87,6 @@
     .photo-wrapper img { object-fit: cover; border-radius: 4px; border: 2px solid white; box-shadow: 0 3px 8px rgba(0,0,0,0.1); transition: all 0.2s ease; cursor: pointer; }
     .photo-wrapper img:active { transform: scale(0.95); }
     
-    /* Tombol silang sekarang bertindak menghapus instan */
     .btn-delete { position: absolute; top: -10px; right: -10px; background-color: #D9534F; color: white; border: 2px solid white; border-radius: 50%; width: 26px; height: 26px; font-size: 12px; font-weight: bold; cursor: pointer; display: flex; justify-content: center; align-items: center; padding: 0; margin: 0; box-shadow: 0 2px 5px rgba(0,0,0,0.2); transition: background-color 0.2s; z-index: 5; }
     .btn-delete:active { transform: scale(0.9); }
     
@@ -124,22 +123,33 @@
 
     .btn-play { background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.4); backdrop-filter: blur(5px); border-radius: 50%; width: 28px; height: 28px; display: flex; justify-content: center; align-items: center; cursor: pointer; color: white; font-size: 12px; flex-shrink: 0; box-shadow: none; z-index: 5;}
     
-    /* MODAL POPUP LIGHTBOX UNTUK FEEDS */
+    /* MODAL POPUP LIGHTBOX UNTUK FEEDS (Background Diterangkan ke 0.7) */
     #feedModal {
       display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
-      background: rgba(0,0,0,0.92); z-index: 9999; justify-content: center; align-items: center; 
+      background: rgba(0,0,0,0.7); z-index: 9999; justify-content: center; align-items: center; 
       flex-direction: column; padding: 20px; box-sizing: border-box; backdrop-filter: blur(8px);
       opacity: 0; transition: opacity 0.3s ease;
     }
     #feedModal.show { opacity: 1; }
     
-    /* MODAL PREVIEW FOTO KETIKA DIPENCET */
+    /* MODAL PREVIEW FOTO KETIKA DIPENCET (Background Diterangkan ke 0.7 & Swipe Box) */
     #previewModal {
       display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
-      background: rgba(0,0,0,0.92); z-index: 9999; justify-content: center; align-items: center; 
+      background: rgba(0,0,0,0.7); z-index: 9999; justify-content: center; align-items: center; 
       flex-direction: column; padding: 20px; box-sizing: border-box; backdrop-filter: blur(8px);
       opacity: 0; transition: opacity 0.3s ease;
     }
+    
+    /* TOMBOL KANAN KIRI UNTUK SLIDER FOTO */
+    .nav-btn {
+      background: rgba(255,255,255,0.25); color: white; border: none; border-radius: 50%; width: 45px; height: 45px; font-size: 18px; 
+      display: flex; justify-content: center; align-items: center; cursor: pointer; backdrop-filter: blur(5px);
+      position: absolute; top: 50%; transform: translateY(-50%); z-index: 1000; box-shadow: 0 4px 10px rgba(0,0,0,0.2); margin:0; padding:0;
+    }
+    .nav-btn:active { background: rgba(255,255,255,0.4); transform: translateY(-50%) scale(0.9); }
+    #prevBtn { left: -15px; }
+    #nextBtn { right: -15px; }
+
   </style>
 </head>
 <body onload="initApp()">
@@ -212,13 +222,12 @@
     </div>
   </div>
 
-  <!-- HALAMAN 2: CAMERA UNIFIED (Polaroid & Grid) -->
+  <!-- HALAMAN 2: CAMERA UNIFIED -->
   <div id="page2" class="page">
     <div style="text-align: left;"><button onclick="batalkanSesi()" class="btn-back">← Ganti Layout</button></div>
     <h3 style="font-size: 24px; margin-bottom: 0; margin-top: -10px;">Ambil Momenmu</h3>
     <p style="font-size: 11px; margin-top: 5px; margin-bottom: 20px; color: #666;">Posisikan senyum Anda di dalam bingkai</p>
     
-    <!-- FRAME DINAMIS -->
     <div id="cameraFrame" class="camera-polaroid-frame">
       <video id="videoFeed" autoplay playsinline></video>
       <canvas id="captureCanvas" style="display:none;"></canvas>
@@ -314,17 +323,22 @@
 
   <!-- LIGHTBOX / MODAL POPUP UNTUK FEEDS LIVE -->
   <div id="feedModal">
-    <button onclick="tutupModal()" style="position:absolute; top:20px; right:20px; background:none; color:white; border:none; font-size:40px; box-shadow:none; width:auto; padding:0; cursor:pointer; line-height:1;">&times;</button>
+    <button onclick="tutupModal()" style="position:absolute; top:20px; right:20px; background:none; color:white; border:none; font-size:40px; box-shadow:none; width:auto; padding:0; cursor:pointer; line-height:1; z-index:1001;">&times;</button>
     <img id="modalImg" src="" style="max-width:100%; max-height:55vh; border-radius:6px; border:3px solid white; box-shadow:0 10px 30px rgba(0,0,0,0.5); object-fit:contain;">
     <h3 id="modalName" style="color:white; margin-top:25px; margin-bottom:10px; font-size:24px;"></h3>
     <p id="modalMessage" style="color:rgba(255,255,255,0.9); font-size:13px; font-style:italic; text-align:center; max-width:90%; margin-top:0; margin-bottom:25px; line-height:1.5;"></p>
     <button id="modalAudioBtn" style="display:none; background:var(--accent-color); color:white; border-radius:30px; padding:12px 30px; width:auto; font-size:14px; box-shadow:0 4px 15px rgba(197, 168, 128, 0.4);"><span id="modalAudioIcon">▶</span> Dengarkan Pesan Suara</button>
   </div>
 
-  <!-- POPUP PREVIEW FOTO KETIKA DIAMBIL OLEH TAMU (Memperbesar Hasil Jepretan) -->
-  <div id="previewModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 9999; justify-content: center; align-items: center; flex-direction: column; padding: 20px; box-sizing: border-box; opacity: 0; transition: opacity 0.3s ease;">
-    <button onclick="tutupPreview()" style="position:absolute; top:20px; right:20px; background:none; color:white; border:none; font-size:40px; box-shadow:none; width:auto; padding:0; cursor:pointer; line-height:1;">&times;</button>
-    <img id="previewModalImg" src="" style="max-width:100%; max-height:60vh; border-radius:8px; border:2px solid white; box-shadow:0 10px 30px rgba(0,0,0,0.5); object-fit:contain; margin-bottom: 20px;">
+  <!-- POPUP PREVIEW FOTO KETIKA DIAMBIL (DENGAN SLIDER DAN SWIPE) -->
+  <div id="previewModal">
+    <button onclick="tutupPreview()" style="position:absolute; top:20px; right:20px; background:none; color:white; border:none; font-size:40px; box-shadow:none; width:auto; padding:0; cursor:pointer; line-height:1; z-index:1001;">&times;</button>
+    
+    <div id="swipeArea" style="position: relative; width: 100%; max-width: 340px; display: flex; justify-content: center; align-items: center; margin-bottom: 25px;">
+      <button id="prevBtn" class="nav-btn" onclick="geserPreview(-1)">❮</button>
+      <img id="previewModalImg" src="" style="max-width:100%; max-height:60vh; border-radius:8px; border:2px solid white; box-shadow:0 10px 30px rgba(0,0,0,0.5); object-fit:contain; transition: transform 0.2s ease, opacity 0.2s ease;">
+      <button id="nextBtn" class="nav-btn" onclick="geserPreview(1)">❯</button>
+    </div>
     
     <div style="display: flex; gap: 15px; width: 100%; max-width: 300px;">
       <button onclick="tutupPreview()" style="flex:1; background: white; color: var(--text-color); margin:0;">OK</button>
@@ -586,14 +600,57 @@
       setTimeout(() => { video.play(); }, 1000);
     }
 
-    // FUNGSI PREVIEW ZOOM BESAR
+    // FUNGSI PREVIEW ZOOM BESAR DENGAN SLIDER DAN SWIPE
     function bukaPreview(index) {
       currentPreviewIndex = index;
-      document.getElementById('previewModalImg').src = arrayFoto[index];
+      updatePreviewContent();
+      
       document.getElementById('btnHapusPreview').onclick = function() { hapusDariPreview(); };
       const modal = document.getElementById('previewModal');
       modal.style.display = 'flex';
       setTimeout(() => { modal.style.opacity = '1'; }, 10);
+    }
+    
+    function updatePreviewContent() {
+      const img = document.getElementById('previewModalImg');
+      img.src = arrayFoto[currentPreviewIndex];
+      
+      const prevBtn = document.getElementById('prevBtn');
+      const nextBtn = document.getElementById('nextBtn');
+      
+      if(currentPreviewIndex === 0) prevBtn.style.display = 'none'; else prevBtn.style.display = 'flex';
+      if(currentPreviewIndex === arrayFoto.length - 1) nextBtn.style.display = 'none'; else nextBtn.style.display = 'flex';
+    }
+
+    function geserPreview(arah) {
+      const newIndex = currentPreviewIndex + arah;
+      if (newIndex >= 0 && newIndex < arrayFoto.length) {
+        currentPreviewIndex = newIndex;
+        const img = document.getElementById('previewModalImg');
+        img.style.transform = 'scale(0.95)';
+        img.style.opacity = '0.5';
+        setTimeout(() => {
+          updatePreviewContent();
+          img.style.transform = 'scale(1)';
+          img.style.opacity = '1';
+        }, 150);
+      }
+    }
+    
+    // Logika Swipe Khusus Layar Sentuh
+    let touchStartX = 0; let touchEndX = 0;
+    const swipeArea = document.getElementById('swipeArea');
+    
+    swipeArea.addEventListener('touchstart', e => { touchStartX = e.changedTouches[0].screenX; }, {passive: true});
+    swipeArea.addEventListener('touchend', e => { 
+      touchEndX = e.changedTouches[0].screenX; 
+      handleSwipe(); 
+    }, {passive: true});
+    
+    function handleSwipe() {
+      const threshold = 50; 
+      if (touchEndX < touchStartX - threshold) { geserPreview(1); } // Swipe Kiri = Next
+      if (touchEndX > touchStartX + threshold) { geserPreview(-1); } // Swipe Kanan = Prev
     }
 
     function tutupPreview() {
@@ -609,9 +666,16 @@
         const idxGrid = fotoTerpilihGrid.indexOf(src);
         if(idxGrid !== -1) fotoTerpilihGrid.splice(idxGrid, 1);
         if(fotoTerpilih === src) fotoTerpilih = null;
+        
         renderPreview(); saveLokal();
+        
+        if(arrayFoto.length === 0) {
+          tutupPreview();
+        } else {
+          if (currentPreviewIndex >= arrayFoto.length) { currentPreviewIndex = arrayFoto.length - 1; }
+          updatePreviewContent();
+        }
       }
-      tutupPreview();
     }
 
     function renderPreview() {
@@ -628,12 +692,11 @@
         imgEl.style.width = (selectedTemplate === 'polaroid') ? "65px" : "90px";
         imgEl.style.height = (selectedTemplate === 'polaroid') ? "85px" : "50px";
         
-        imgEl.onclick = function() { bukaPreview(index); }; // Klik untuk Zoom (Lightbox)
+        imgEl.onclick = function() { bukaPreview(index); }; 
 
         const btnDelete = document.createElement('button'); btnDelete.className = 'btn-delete'; btnDelete.innerHTML = '✕';
         btnDelete.onclick = function(e) {
-          e.stopPropagation(); // Mencegah popup preview terbuka saat tombol X dipencet
-          // PENGHAPUSAN LANGSUNG / INSTAN TANPA TANDA TANYA
+          e.stopPropagation(); 
           arrayFoto.splice(index, 1); 
           const idxGrid = fotoTerpilihGrid.indexOf(src);
           if(idxGrid !== -1) fotoTerpilihGrid.splice(idxGrid, 1);
@@ -714,7 +777,6 @@
         setTimeout(() => { btn.innerText = oldText; btn.style.backgroundColor = ""; }, 3000); return; 
       }
 
-      // POPUP KONFIRMASI SIMPAN FOTO
       if(!confirm("Yakin ingin menyimpan momen ini dan melanjutkan ke halaman berikutnya?")) return;
 
       const btnSave = document.getElementById('btnSimpanDrive'); btnSave.disabled = true; btnSave.innerText = "Menyimpan... Mohon Tunggu";
@@ -803,7 +865,6 @@
       }
     }
 
-    // FUNGSI KHUSUS: Menggambar gambar dengan Filter secara Sempurna di Sudut Melengkung (Offscreen Canvas)
     function drawFilteredImage(ctx, img, x, y, w, h, radius) {
       const offCanvas = document.createElement('canvas'); offCanvas.width = w; offCanvas.height = h;
       const offCtx = offCanvas.getContext('2d');
@@ -828,12 +889,8 @@
           data[i] = Math.min(255, Math.max(0, r)); data[i + 1] = Math.min(255, Math.max(0, g)); data[i + 2] = Math.min(255, Math.max(0, b));
         } offCtx.putImageData(imgData, 0, 0);
       }
-      
-      ctx.save();
-      drawRoundedRect(ctx, x, y, w, h, radius);
-      ctx.clip(); // Memotong kanvas sesuai bentuk radius (melengkung)
-      ctx.drawImage(offCanvas, x, y, w, h); // Memasukkan gambar yang sudah difilter ke dalam potongan
-      ctx.restore();
+      ctx.save(); drawRoundedRect(ctx, x, y, w, h, radius); ctx.clip(); 
+      ctx.drawImage(offCanvas, x, y, w, h); ctx.restore();
     }
 
     function gambarDiCanvas() {
