@@ -123,13 +123,12 @@
 
     .btn-play { background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.4); backdrop-filter: blur(5px); border-radius: 50%; width: 28px; height: 28px; display: flex; justify-content: center; align-items: center; cursor: pointer; color: white; font-size: 12px; flex-shrink: 0; box-shadow: none; z-index: 5;}
     
-    /* LIGHTBOX & MODAL - DITAMBAHKAN TOUCH-ACTION: NONE AGAR ANTI-SCROLL */
     #feedModal {
       display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
       background: rgba(0,0,0,0.7); z-index: 9999; justify-content: center; align-items: center; 
       flex-direction: column; padding: 20px; box-sizing: border-box; backdrop-filter: blur(8px);
       opacity: 0; transition: opacity 0.3s ease;
-      touch-action: none; /* MENGUNCI SCROLL LAYAR DI HP */
+      touch-action: none; 
     }
     #feedModal.show { opacity: 1; }
     
@@ -138,7 +137,7 @@
       background: rgba(0,0,0,0.7); z-index: 9999; justify-content: center; align-items: center; 
       flex-direction: column; padding: 20px; box-sizing: border-box; backdrop-filter: blur(8px);
       opacity: 0; transition: opacity 0.3s ease;
-      touch-action: none; /* MENGUNCI SCROLL LAYAR DI HP */
+      touch-action: none; 
     }
     
     .nav-btn {
@@ -329,7 +328,7 @@
     <button id="modalAudioBtn" style="display:none; background:var(--accent-color); color:white; border-radius:30px; padding:12px 30px; width:auto; font-size:14px; box-shadow:0 4px 15px rgba(197, 168, 128, 0.4);"><span id="modalAudioIcon">▶</span> Dengarkan Pesan Suara</button>
   </div>
 
-  <!-- POPUP PREVIEW FOTO DIAMBIL OLEH TAMU (SLIDER & SWIPE FIXED) -->
+  <!-- POPUP PREVIEW FOTO KETIKA DIAMBIL -->
   <div id="previewModal">
     <button onclick="tutupPreview()" style="position:absolute; top:20px; right:20px; background:none; color:white; border:none; font-size:40px; box-shadow:none; width:auto; padding:0; cursor:pointer; line-height:1; z-index:1001;">&times;</button>
     
@@ -436,17 +435,11 @@
       document.getElementById(idTujuan).classList.add('active'); window.scrollTo(0,0); saveLokal(); 
     }
 
-    document.addEventListener('click', function(e) {
-      if(!e.target.classList.contains('feed-message') && !e.target.classList.contains('btn-play')) {
-        document.querySelectorAll('.feed-message.expanded').forEach(el => { el.classList.remove('expanded'); });
-      }
-    });
-
     let audioCtx = null; let currentAudioSource = null; let currentPlayingBtn = null;
     function initAudioContext() { if (!audioCtx) { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); } if (audioCtx.state === 'suspended') { audioCtx.resume(); } }
 
     function bukaModal(imgSrc, name, message, audioUrl) {
-      document.body.style.overflow = 'hidden'; // MATIKAN SCROLL BACKGROUND
+      document.body.style.overflow = 'hidden'; 
       document.getElementById('modalImg').src = imgSrc; document.getElementById('modalName').innerText = name;
       const msgEl = document.getElementById('modalMessage');
       if(message) { msgEl.innerText = '"' + message + '"'; msgEl.style.display = 'block'; } else { msgEl.style.display = 'none'; }
@@ -459,7 +452,7 @@
     }
     
     function tutupModal() {
-      document.body.style.overflow = ''; // NYALAKAN KEMBALI SCROLL
+      document.body.style.overflow = ''; 
       const modal = document.getElementById('feedModal'); modal.classList.remove('show');
       if (currentAudioSource) { currentAudioSource.stop(); currentAudioSource = null; }
       setTimeout(() => { modal.style.display = 'none'; document.getElementById('modalImg').src = ""; }, 300);
@@ -607,11 +600,8 @@
       setTimeout(() => { video.play(); }, 1000);
     }
 
-    // =========================================================================
-    // LOGIKA PREVIEW FOTO (LIGHTBOX) DENGAN SLIDER DAN SWIPE TOUCH
-    // =========================================================================
     function bukaPreview(index) {
-      document.body.style.overflow = 'hidden'; // MATIKAN SCROLL BACKGROUND
+      document.body.style.overflow = 'hidden'; 
       currentPreviewIndex = index;
       updatePreviewContent();
       
@@ -647,7 +637,6 @@
       }
     }
     
-    // Deteksi Layar Sentuh untuk SWIPE KIRI/KANAN secara cerdas
     let touchStartX = 0; let touchEndX = 0;
     const swipeArea = document.getElementById('previewModal');
     
@@ -655,12 +644,12 @@
     swipeArea.addEventListener('touchend', e => { 
       touchEndX = e.changedTouches[0].screenX; 
       const threshold = 50; 
-      if (touchEndX < touchStartX - threshold) { geserPreview(1); } // Swipe Kiri (Next)
-      if (touchEndX > touchStartX + threshold) { geserPreview(-1); } // Swipe Kanan (Prev)
+      if (touchEndX < touchStartX - threshold) { geserPreview(1); } 
+      if (touchEndX > touchStartX + threshold) { geserPreview(-1); } 
     }, {passive: true});
 
     function tutupPreview() {
-      document.body.style.overflow = ''; // NYALAKAN KEMBALI SCROLL
+      document.body.style.overflow = ''; 
       const modal = document.getElementById('previewModal');
       modal.style.opacity = '0';
       setTimeout(() => { modal.style.display = 'none'; document.getElementById('previewModalImg').src = ""; }, 300);
@@ -679,13 +668,11 @@
         if(arrayFoto.length === 0) {
           tutupPreview();
         } else {
-          // Menyesuaikan posisi index apabila foto terakhir yang dihapus
           if (currentPreviewIndex >= arrayFoto.length) { currentPreviewIndex = arrayFoto.length - 1; }
           updatePreviewContent();
         }
       }
     }
-    // =========================================================================
 
     function renderPreview() {
       const previewArea = document.getElementById('previewArea'); previewArea.innerHTML = ""; 
@@ -884,13 +871,42 @@
         const cx = w / 2; const cy = h / 2; const maxDist = Math.sqrt(cx*cx + cy*cy);
         for (let i = 0; i < data.length; i += 4) {
           let r = data[i], g = data[i + 1], b = data[i + 2];
+          
           if (filterSaatIni === 'polaroid') {
-            r *= 1.15; g *= 1.15; b *= 1.15; let contrast = 0.85; r = contrast * (r - 128) + 128; g = contrast * (g - 128) + 128; b = contrast * (b - 128) + 128;
-            r = 25 + (r * 210 / 255); g = 25 + (g * 210 / 255); b = 25 + (b * 210 / 255); r += 15; g += 6; b -= 15;
-            let luma = 0.299 * r + 0.587 * g + 0.114 * b; let sat = 0.95; r = luma + sat * (r - luma); g = luma + sat * (g - luma); b = luma + sat * (b - luma);
-            let px = (i / 4) % w; let py = Math.floor((i / 4) / w);
-            let dist = Math.sqrt((px - cx)*(px - cx) + (py - cy)*(py - cy)); let vignette = 1.0 - (dist / maxDist) * 0.25; 
-            r *= vignette; g *= vignette; b *= vignette; let noise = (Math.random() - 0.5) * 35; r += noise; g += noise; b += noise;
+             // Pengaturan Filter Polaroid Baru sesuai Lightroom
+             // Exposure 0, Contrast -24, Highlights +39, Shadows +48, Whites +24, Blacks +22
+             // Temp 5500K (Hangat), Tint +21 (Magenta), Vibrance +10, Saturation -23
+             // Texture -17, Clarity +4, Dehaze -8
+             // Vignette -12, Midpoint 71, Roundness +64, Feather 55, Highlights 70
+             // Grain 44, Size 39, Roughness 59
+             
+             // Penyesuaian Contrast (-24)
+             let contrast = 0.76; 
+             r = contrast * (r - 128) + 128; 
+             g = contrast * (g - 128) + 128; 
+             b = contrast * (b - 128) + 128;
+             
+             // Penyesuaian Suhu Warna (Hangat) dan Tint (Magenta)
+             r += 10; b -= 15; // Hangat
+             r += 5; b += 5; // Magenta Tint
+
+             // Saturation (-23)
+             let luma = 0.299 * r + 0.587 * g + 0.114 * b; 
+             let sat = 0.77; 
+             r = luma + sat * (r - luma); 
+             g = luma + sat * (g - luma); 
+             b = luma + sat * (b - luma);
+
+             // Vignette Halus
+             let px = (i / 4) % w; let py = Math.floor((i / 4) / w);
+             let dist = Math.sqrt((px - cx)*(px - cx) + (py - cy)*(py - cy)); 
+             let vignette = 1.0 - (dist / maxDist) * 0.15; 
+             r *= vignette; g *= vignette; b *= vignette; 
+
+             // Grain Kuat
+             let noise = (Math.random() - 0.5) * 44; 
+             r += noise; g += noise; b += noise;
+             
           } else if (filterSaatIni === 'digicam') {
             let contrast = 1.25; r = ((r / 255 - 0.5) * contrast + 0.5) * 255; g = ((g / 255 - 0.5) * contrast + 0.5) * 255; b = ((b / 255 - 0.5) * contrast + 0.5) * 255;
             let luma = 0.299 * r + 0.587 * g + 0.114 * b; let sat = 1.3; r = luma + sat * (r - luma); g = luma + sat * (g - luma); b = luma + sat * (b - luma); b += 15; g += 5;
