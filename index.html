@@ -123,21 +123,38 @@
 
     .btn-play { background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.4); backdrop-filter: blur(5px); border-radius: 50%; width: 28px; height: 28px; display: flex; justify-content: center; align-items: center; cursor: pointer; color: white; font-size: 12px; flex-shrink: 0; box-shadow: none; z-index: 5;}
     
+    /* LIGHTBOX UNTUK FEEDS LIVE - PERBAIKAN TATA LETAK AGAR TIDAK TERPOTONG */
     #feedModal {
       display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
       background: rgba(0,0,0,0.7); z-index: 9999; justify-content: center; align-items: center; 
       flex-direction: column; padding: 20px; box-sizing: border-box; backdrop-filter: blur(8px);
       opacity: 0; transition: opacity 0.3s ease;
-      touch-action: none; 
+      /* touch-action: none; Dihilangkan agar teks yang panjang bisa di scroll */
     }
     #feedModal.show { opacity: 1; }
     
+    /* Foto lebih kecil sedikit di popup feed agar menyisakan ruang untuk tombol dan teks */
+    #modalImg {
+      max-width: 100%; max-height: 45vh; border-radius: 6px; border: 3px solid white; 
+      box-shadow: 0 10px 30px rgba(0,0,0,0.5); object-fit: contain; flex-shrink: 0;
+    }
+
+    /* Scrollbar rapi untuk teks panjang di modal */
+    #modalMessage {
+      color: rgba(255, 255, 255, 0.9); font-size: 13px; font-style: italic; text-align: center; 
+      max-width: 90%; margin-top: 0; margin-bottom: 20px; line-height: 1.5; 
+      max-height: 120px; overflow-y: auto; padding: 0 10px; flex-shrink: 1;
+    }
+    #modalMessage::-webkit-scrollbar { width: 4px; }
+    #modalMessage::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.3); border-radius: 10px; }
+    
+    /* POPUP PREVIEW FOTO KETIKA DIAMBIL OLEH TAMU (SLIDER) */
     #previewModal {
       display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
       background: rgba(0,0,0,0.7); z-index: 9999; justify-content: center; align-items: center; 
       flex-direction: column; padding: 20px; box-sizing: border-box; backdrop-filter: blur(8px);
       opacity: 0; transition: opacity 0.3s ease;
-      touch-action: none; 
+      touch-action: none; /* MENGUNCI SCROLL LAYAR DI HP */
     }
     
     .nav-btn {
@@ -322,13 +339,17 @@
   <!-- LIGHTBOX UNTUK FEEDS LIVE -->
   <div id="feedModal">
     <button onclick="tutupModal()" style="position:absolute; top:20px; right:20px; background:none; color:white; border:none; font-size:40px; box-shadow:none; width:auto; padding:0; cursor:pointer; line-height:1; z-index:1001;">&times;</button>
-    <img id="modalImg" src="" style="max-width:100%; max-height:55vh; border-radius:6px; border:3px solid white; box-shadow:0 10px 30px rgba(0,0,0,0.5); object-fit:contain;">
-    <h3 id="modalName" style="color:white; margin-top:25px; margin-bottom:10px; font-size:24px;"></h3>
-    <p id="modalMessage" style="color:rgba(255,255,255,0.9); font-size:13px; font-style:italic; text-align:center; max-width:90%; margin-top:0; margin-bottom:25px; line-height:1.5;"></p>
+    
+    <img id="modalImg" src="">
+    
+    <h3 id="modalName" style="color:white; margin-top:20px; margin-bottom:10px; font-size:24px;"></h3>
+    
+    <p id="modalMessage"></p>
+    
     <button id="modalAudioBtn" style="display:none; background:var(--accent-color); color:white; border-radius:30px; padding:12px 30px; width:auto; font-size:14px; box-shadow:0 4px 15px rgba(197, 168, 128, 0.4);"><span id="modalAudioIcon">▶</span> Dengarkan Pesan Suara</button>
   </div>
 
-  <!-- POPUP PREVIEW FOTO KETIKA DIAMBIL -->
+  <!-- POPUP PREVIEW FOTO KETIKA DIAMBIL OLEH TAMU (SLIDER & SWIPE FIXED) -->
   <div id="previewModal">
     <button onclick="tutupPreview()" style="position:absolute; top:20px; right:20px; background:none; color:white; border:none; font-size:40px; box-shadow:none; width:auto; padding:0; cursor:pointer; line-height:1; z-index:1001;">&times;</button>
     
@@ -873,40 +894,20 @@
           let r = data[i], g = data[i + 1], b = data[i + 2];
           
           if (filterSaatIni === 'polaroid') {
-             // Pengaturan Filter Polaroid Baru sesuai Lightroom
-             // Exposure 0, Contrast -24, Highlights +39, Shadows +48, Whites +24, Blacks +22
-             // Temp 5500K (Hangat), Tint +21 (Magenta), Vibrance +10, Saturation -23
-             // Texture -17, Clarity +4, Dehaze -8
-             // Vignette -12, Midpoint 71, Roundness +64, Feather 55, Highlights 70
-             // Grain 44, Size 39, Roughness 59
-             
-             // Penyesuaian Contrast (-24)
              let contrast = 0.76; 
              r = contrast * (r - 128) + 128; 
              g = contrast * (g - 128) + 128; 
              b = contrast * (b - 128) + 128;
-             
-             // Penyesuaian Suhu Warna (Hangat) dan Tint (Magenta)
-             r += 10; b -= 15; // Hangat
-             r += 5; b += 5; // Magenta Tint
-
-             // Saturation (-23)
+             r += 10; b -= 15; r += 5; b += 5; 
              let luma = 0.299 * r + 0.587 * g + 0.114 * b; 
              let sat = 0.77; 
-             r = luma + sat * (r - luma); 
-             g = luma + sat * (g - luma); 
-             b = luma + sat * (b - luma);
-
-             // Vignette Halus
+             r = luma + sat * (r - luma); g = luma + sat * (g - luma); b = luma + sat * (b - luma);
              let px = (i / 4) % w; let py = Math.floor((i / 4) / w);
              let dist = Math.sqrt((px - cx)*(px - cx) + (py - cy)*(py - cy)); 
              let vignette = 1.0 - (dist / maxDist) * 0.15; 
              r *= vignette; g *= vignette; b *= vignette; 
-
-             // Grain Kuat
              let noise = (Math.random() - 0.5) * 44; 
              r += noise; g += noise; b += noise;
-             
           } else if (filterSaatIni === 'digicam') {
             let contrast = 1.25; r = ((r / 255 - 0.5) * contrast + 0.5) * 255; g = ((g / 255 - 0.5) * contrast + 0.5) * 255; b = ((b / 255 - 0.5) * contrast + 0.5) * 255;
             let luma = 0.299 * r + 0.587 * g + 0.114 * b; let sat = 1.3; r = luma + sat * (r - luma); g = luma + sat * (g - luma); b = luma + sat * (b - luma); b += 15; g += 5;
@@ -924,13 +925,11 @@
       
       if(selectedTemplate === 'polaroid') {
          drawFilteredImage(ctx, imgObj, 60, 60, 780, 900, 18);
-         ctx.fillStyle = "#2C302E"; ctx.font = "italic 700 55px 'Playfair Display'"; ctx.textAlign = "center"; 
-         ctx.fillText(namaUser, canvas.width/2, 1080);
+         // NAMA DIHILANGKAN DARI SINI
       } else {
          drawFilteredImage(ctx, imgObj, 60, 60, 780, 420, 24);
          drawFilteredImage(ctx, imgObj2, 60, 510, 780, 420, 24);
-         ctx.fillStyle = "#2C302E"; ctx.font = "italic 700 55px 'Playfair Display'"; ctx.textAlign = "center"; 
-         ctx.fillText(namaUser, canvas.width/2, 1080);
+         // NAMA DIHILANGKAN DARI SINI
       }
     }
 
