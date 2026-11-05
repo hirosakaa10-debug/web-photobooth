@@ -123,24 +123,24 @@
 
     .btn-play { background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.4); backdrop-filter: blur(5px); border-radius: 50%; width: 28px; height: 28px; display: flex; justify-content: center; align-items: center; cursor: pointer; color: white; font-size: 12px; flex-shrink: 0; box-shadow: none; z-index: 5;}
     
-    /* MODAL POPUP LIGHTBOX UNTUK FEEDS (Background Diterangkan ke 0.7) */
+    /* LIGHTBOX & MODAL - DITAMBAHKAN TOUCH-ACTION: NONE AGAR ANTI-SCROLL */
     #feedModal {
       display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
       background: rgba(0,0,0,0.7); z-index: 9999; justify-content: center; align-items: center; 
       flex-direction: column; padding: 20px; box-sizing: border-box; backdrop-filter: blur(8px);
       opacity: 0; transition: opacity 0.3s ease;
+      touch-action: none; /* MENGUNCI SCROLL LAYAR DI HP */
     }
     #feedModal.show { opacity: 1; }
     
-    /* MODAL PREVIEW FOTO KETIKA DIPENCET (Background Diterangkan ke 0.7 & Swipe Box) */
     #previewModal {
       display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
       background: rgba(0,0,0,0.7); z-index: 9999; justify-content: center; align-items: center; 
       flex-direction: column; padding: 20px; box-sizing: border-box; backdrop-filter: blur(8px);
       opacity: 0; transition: opacity 0.3s ease;
+      touch-action: none; /* MENGUNCI SCROLL LAYAR DI HP */
     }
     
-    /* TOMBOL KANAN KIRI UNTUK SLIDER FOTO */
     .nav-btn {
       background: rgba(255,255,255,0.25); color: white; border: none; border-radius: 50%; width: 45px; height: 45px; font-size: 18px; 
       display: flex; justify-content: center; align-items: center; cursor: pointer; backdrop-filter: blur(5px);
@@ -149,7 +149,6 @@
     .nav-btn:active { background: rgba(255,255,255,0.4); transform: translateY(-50%) scale(0.9); }
     #prevBtn { left: -15px; }
     #nextBtn { right: -15px; }
-
   </style>
 </head>
 <body onload="initApp()">
@@ -321,7 +320,7 @@
     <button onclick="window.location.reload()" style="background: transparent; color: var(--text-color); border: 1px solid #CCC; box-shadow: none; margin-top: 20px; font-size: 13px;">Kembali ke Halaman Utama</button>
   </div>
 
-  <!-- LIGHTBOX / MODAL POPUP UNTUK FEEDS LIVE -->
+  <!-- LIGHTBOX UNTUK FEEDS LIVE -->
   <div id="feedModal">
     <button onclick="tutupModal()" style="position:absolute; top:20px; right:20px; background:none; color:white; border:none; font-size:40px; box-shadow:none; width:auto; padding:0; cursor:pointer; line-height:1; z-index:1001;">&times;</button>
     <img id="modalImg" src="" style="max-width:100%; max-height:55vh; border-radius:6px; border:3px solid white; box-shadow:0 10px 30px rgba(0,0,0,0.5); object-fit:contain;">
@@ -330,11 +329,11 @@
     <button id="modalAudioBtn" style="display:none; background:var(--accent-color); color:white; border-radius:30px; padding:12px 30px; width:auto; font-size:14px; box-shadow:0 4px 15px rgba(197, 168, 128, 0.4);"><span id="modalAudioIcon">▶</span> Dengarkan Pesan Suara</button>
   </div>
 
-  <!-- POPUP PREVIEW FOTO KETIKA DIAMBIL (DENGAN SLIDER DAN SWIPE) -->
+  <!-- POPUP PREVIEW FOTO DIAMBIL OLEH TAMU (SLIDER & SWIPE FIXED) -->
   <div id="previewModal">
     <button onclick="tutupPreview()" style="position:absolute; top:20px; right:20px; background:none; color:white; border:none; font-size:40px; box-shadow:none; width:auto; padding:0; cursor:pointer; line-height:1; z-index:1001;">&times;</button>
     
-    <div id="swipeArea" style="position: relative; width: 100%; max-width: 340px; display: flex; justify-content: center; align-items: center; margin-bottom: 25px;">
+    <div style="position: relative; width: 100%; max-width: 340px; display: flex; justify-content: center; align-items: center; margin-bottom: 25px;">
       <button id="prevBtn" class="nav-btn" onclick="geserPreview(-1)">❮</button>
       <img id="previewModalImg" src="" style="max-width:100%; max-height:60vh; border-radius:8px; border:2px solid white; box-shadow:0 10px 30px rgba(0,0,0,0.5); object-fit:contain; transition: transform 0.2s ease, opacity 0.2s ease;">
       <button id="nextBtn" class="nav-btn" onclick="geserPreview(1)">❯</button>
@@ -437,10 +436,17 @@
       document.getElementById(idTujuan).classList.add('active'); window.scrollTo(0,0); saveLokal(); 
     }
 
+    document.addEventListener('click', function(e) {
+      if(!e.target.classList.contains('feed-message') && !e.target.classList.contains('btn-play')) {
+        document.querySelectorAll('.feed-message.expanded').forEach(el => { el.classList.remove('expanded'); });
+      }
+    });
+
     let audioCtx = null; let currentAudioSource = null; let currentPlayingBtn = null;
     function initAudioContext() { if (!audioCtx) { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); } if (audioCtx.state === 'suspended') { audioCtx.resume(); } }
 
     function bukaModal(imgSrc, name, message, audioUrl) {
+      document.body.style.overflow = 'hidden'; // MATIKAN SCROLL BACKGROUND
       document.getElementById('modalImg').src = imgSrc; document.getElementById('modalName').innerText = name;
       const msgEl = document.getElementById('modalMessage');
       if(message) { msgEl.innerText = '"' + message + '"'; msgEl.style.display = 'block'; } else { msgEl.style.display = 'none'; }
@@ -453,6 +459,7 @@
     }
     
     function tutupModal() {
+      document.body.style.overflow = ''; // NYALAKAN KEMBALI SCROLL
       const modal = document.getElementById('feedModal'); modal.classList.remove('show');
       if (currentAudioSource) { currentAudioSource.stop(); currentAudioSource = null; }
       setTimeout(() => { modal.style.display = 'none'; document.getElementById('modalImg').src = ""; }, 300);
@@ -600,8 +607,11 @@
       setTimeout(() => { video.play(); }, 1000);
     }
 
-    // FUNGSI PREVIEW ZOOM BESAR DENGAN SLIDER DAN SWIPE
+    // =========================================================================
+    // LOGIKA PREVIEW FOTO (LIGHTBOX) DENGAN SLIDER DAN SWIPE TOUCH
+    // =========================================================================
     function bukaPreview(index) {
+      document.body.style.overflow = 'hidden'; // MATIKAN SCROLL BACKGROUND
       currentPreviewIndex = index;
       updatePreviewContent();
       
@@ -637,23 +647,20 @@
       }
     }
     
-    // Logika Swipe Khusus Layar Sentuh
+    // Deteksi Layar Sentuh untuk SWIPE KIRI/KANAN secara cerdas
     let touchStartX = 0; let touchEndX = 0;
-    const swipeArea = document.getElementById('swipeArea');
+    const swipeArea = document.getElementById('previewModal');
     
     swipeArea.addEventListener('touchstart', e => { touchStartX = e.changedTouches[0].screenX; }, {passive: true});
     swipeArea.addEventListener('touchend', e => { 
       touchEndX = e.changedTouches[0].screenX; 
-      handleSwipe(); 
-    }, {passive: true});
-    
-    function handleSwipe() {
       const threshold = 50; 
-      if (touchEndX < touchStartX - threshold) { geserPreview(1); } // Swipe Kiri = Next
-      if (touchEndX > touchStartX + threshold) { geserPreview(-1); } // Swipe Kanan = Prev
-    }
+      if (touchEndX < touchStartX - threshold) { geserPreview(1); } // Swipe Kiri (Next)
+      if (touchEndX > touchStartX + threshold) { geserPreview(-1); } // Swipe Kanan (Prev)
+    }, {passive: true});
 
     function tutupPreview() {
+      document.body.style.overflow = ''; // NYALAKAN KEMBALI SCROLL
       const modal = document.getElementById('previewModal');
       modal.style.opacity = '0';
       setTimeout(() => { modal.style.display = 'none'; document.getElementById('previewModalImg').src = ""; }, 300);
@@ -672,11 +679,13 @@
         if(arrayFoto.length === 0) {
           tutupPreview();
         } else {
+          // Menyesuaikan posisi index apabila foto terakhir yang dihapus
           if (currentPreviewIndex >= arrayFoto.length) { currentPreviewIndex = arrayFoto.length - 1; }
           updatePreviewContent();
         }
       }
     }
+    // =========================================================================
 
     function renderPreview() {
       const previewArea = document.getElementById('previewArea'); previewArea.innerHTML = ""; 
