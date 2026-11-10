@@ -6,8 +6,6 @@
   <title>Wedding Virtual Photobooth</title>
   
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&family=Playfair+Display:ital,wght@0,600;0,700;1,600&display=swap" rel="stylesheet">
-  
-  <!-- PUSTAKA SCANNER QR CODE -->
   <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
 
   <style>
@@ -92,7 +90,6 @@
     
     .btn-delete { position: absolute; top: -10px; right: -10px; background-color: #D9534F; color: white; border: 2px solid white; border-radius: 50%; width: 26px; height: 26px; font-size: 12px; font-weight: bold; cursor: pointer; display: flex; justify-content: center; align-items: center; padding: 0; margin: 0; box-shadow: 0 2px 5px rgba(0,0,0,0.2); transition: background-color 0.2s; z-index: 5; }
     .btn-delete:active { transform: scale(0.9); }
-    
     .btn-delete-audio { background-color: transparent; color: #D9534F; border: 1px solid #D9534F; padding: 10px 20px; margin-top: 10px; border-radius: 8px; cursor: pointer; font-family: 'Montserrat'; font-weight: 600; display: none; width: auto; box-shadow: none; font-size: 12px;}
 
     .camera-polaroid-frame { width: 320px; height: 380px; margin: 0 auto 15px auto; background: #222; position: relative; overflow: hidden; border: 15px solid white; border-bottom: 60px solid white; box-shadow: 0 10px 25px rgba(0,0,0,0.1); border-radius: 2px; transition: all 0.3s ease;}
@@ -155,7 +152,6 @@
     #prevBtn { left: -15px; }
     #nextBtn { right: -15px; }
     
-    /* GAYA UNTUK QR SCANNER BOX */
     #qr-reader { border: none !important; border-radius: 8px; overflow: hidden; }
     #qr-reader__scan_region { background: var(--bg-color); }
     #qr-reader__dashboard_section_csr button { background-color: var(--primary-color); color: white; border: none; padding: 8px 15px; border-radius: 5px; cursor: pointer; font-family: 'Montserrat', sans-serif;}
@@ -169,7 +165,6 @@
       <p class="hero-subtitle">The Wedding Of</p>
       <h1 class="hero-title">Budi & Bude</h1>
       <p class="hero-date">25 . 12 . 2026</p>
-      
       <div style="width: 100%; max-width: 250px; margin-top: 30px;">
         <button onclick="gantiHalaman('page0b')" class="accent" style="font-size: 14px; padding: 18px 20px; border-radius: 30px;">Bagikan Momenmu ✨</button>
       </div>
@@ -192,28 +187,26 @@
     <div id="feedGrid" class="feed-container"></div>
   </div>
 
-  <!-- HALAMAN BARU: PEMILIHAN JALUR TAMU (UMUM vs VIP) -->
+  <!-- HALAMAN BARU: PEMILIHAN JALUR TAMU -->
   <div id="page_auth_choice" class="page">
     <div style="text-align: left;"><button onclick="gantiHalaman('page0b')" class="btn-back">← Kembali</button></div>
     <h2 style="font-size: 28px; margin-bottom: 5px;">Pilih Jalur Akses</h2>
     <p style="font-size: 13px; color: #666; margin-top:0; margin-bottom: 25px;">Pilih sesuai undangan Anda</p>
 
     <button onclick="setJalur(false)" style="margin-bottom: 15px; padding: 20px; font-size: 15px;">👋 Tamu Reguler<br><span style="font-size: 10px; font-weight: 400;">(Upload ke Live Feeds)</span></button>
-    
-    <button onclick="setJalur(true)" class="accent" style="padding: 20px; font-size: 15px;">🎟️ Tamu VIP (Punya Kupon)<br><span style="font-size: 10px; font-weight: 400;">(Upload ke Feeds & Cetak Foto Kertas)</span></button>
+    <button onclick="setJalur(true)" class="accent" style="padding: 20px; font-size: 15px;">🎟️ Tamu VIP (Punya Kupon)<br><span style="font-size: 10px; font-weight: 400;">(Upload ke Feeds & Cetak Foto)</span></button>
   </div>
 
-  <!-- HALAMAN 1: LOGIN (Disesuaikan berdasarkan Jalur) -->
+  <!-- HALAMAN 1: LOGIN -->
   <div id="page1" class="page">
     <div style="text-align: left;"><button onclick="kembaliDariLogin()" class="btn-back">← Kembali</button></div>
     <h2 style="font-size: 28px; margin-bottom: 5px;">Virtual Photobooth</h2>
     <p style="font-size: 13px; color: #666; margin-top:0; margin-bottom: 25px;" id="loginSubtitle">Abadikan momen spesial Anda</p>
     
     <div style="text-align: left; width: 100%;">
-      <label style="font-size: 11px; font-weight: 600; color: var(--primary-color); margin-left: 5px;">Nama / Panggilan</label>
+      <label style="font-size: 11px; font-weight: 600; color: var(--primary-color); margin-left: 5px;">Nama Panggilan</label>
       <input type="text" id="inputNama" placeholder="Cth: Budi & Istri" oninput="saveLokal()">
       
-      <!-- BAGIAN KUPON (HANYA MUNCUL JIKA JALUR VIP) -->
       <div id="vipSection" style="display: none; margin-top: 15px;">
         <label style="font-size: 11px; font-weight: 600; color: var(--primary-color); margin-left: 5px;">Kode Kupon Cetak Anda</label>
         <div style="display: flex; gap: 10px; margin-bottom: 5px;">
@@ -332,7 +325,6 @@
       <button id="btnDigicam" class="btn-filter" onclick="terapkanFilter('digicam')">Digicam</button>
     </div>
     
-    <!-- TOMBOL CETAK DINAMIS TERGANTUNG JALUR -->
     <button id="btnKonfirmasiCetak" onclick="konfirmasiCetak()" class="accent" style="margin-top: 25px;">Bagikan Memori Ini ✨</button>
     <div id="loadingPrint" class="loading" style="animation: none;">Finalisasi...</div>
   </div>
@@ -354,9 +346,7 @@
     <button onclick="tutupModal()" style="position:absolute; top:20px; right:20px; background:none; color:white; border:none; font-size:40px; box-shadow:none; width:auto; padding:0; cursor:pointer; line-height:1; z-index:1001;">&times;</button>
     
     <img id="modalImg" src="">
-    
     <h3 id="modalName" style="color:white; margin-top:20px; margin-bottom:10px; font-size:24px;"></h3>
-    
     <p id="modalMessage"></p>
     
     <button id="modalAudioBtn" style="display:none; background:var(--accent-color); color:white; border-radius:30px; padding:12px 30px; width:auto; font-size:14px; box-shadow:0 4px 15px rgba(197, 168, 128, 0.4);"><span id="modalAudioIcon">▶</span> Dengarkan Pesan Suara</button>
@@ -387,12 +377,10 @@
     let filterSaatIni = "normal"; let savedAudioUrl = ""; 
     let videoStream = null; let facingMode = "user"; let selectedTemplate = "polaroid";
     let currentPreviewIndex = -1;
-    let isVipGuest = false; // Penanda Jalur Akses VIP
+    let isVipGuest = false; 
     
     let mediaRecorder, audioChunks = [], timeoutRekaman;
     let imgObj = new Image(), imgObj2 = new Image();
-    
-    // Objek Scanner QR HTML5
     let html5QrCode;
     
     function drawRoundedRect(ctx, x, y, w, h, r) {
@@ -439,7 +427,6 @@
             document.getElementById('inputNama').value = namaUser;
             document.getElementById('inputKupon').value = kuponUser; document.getElementById('inputPesan').value = pesanUser;
             
-            // Atur UI berdasar status VIP
             if(isVipGuest) {
               document.getElementById('vipSection').style.display = 'block';
               document.getElementById('btnKonfirmasiCetak').innerText = "Bagikan & Cetak Foto ✨";
@@ -486,54 +473,26 @@
       gantiHalaman('page_auth_choice');
     }
 
-    // LOGIKA SCANNER QR
     function toggleQRScanner() {
       const reader = document.getElementById('qr-reader');
       const btn = document.getElementById('btnScanQR');
       
-      if(reader.style.display === 'block') {
-         stopQRScanner();
-      } else {
-         reader.style.display = 'block';
-         btn.innerText = "Tutup Kamera";
-         btn.style.background = "#D9534F";
-         btn.style.color = "white";
-         
+      if(reader.style.display === 'block') { stopQRScanner(); } 
+      else {
+         reader.style.display = 'block'; btn.innerText = "Tutup Kamera"; btn.style.background = "#D9534F"; btn.style.color = "white";
          if(!html5QrCode) html5QrCode = new Html5Qrcode("qr-reader");
-         
-         html5QrCode.start(
-           { facingMode: "environment" },
-           { fps: 10, qrbox: { width: 200, height: 200 } },
-           (decodedText, decodedResult) => {
-             // Berhasil Scan
-             document.getElementById('inputKupon').value = decodedText;
-             saveLokal(); stopQRScanner();
-             alert("Kupon berhasil dipindai!");
-           },
-           (errorMessage) => { /* Abaikan error per frame */ }
-         ).catch(err => {
-           alert("Kamera tidak dapat diakses untuk Scan QR. Pastikan izin kamera diberikan.");
-           stopQRScanner();
-         });
+         html5QrCode.start({ facingMode: "environment" }, { fps: 10, qrbox: { width: 200, height: 200 } },
+           (decodedText) => { document.getElementById('inputKupon').value = decodedText; saveLokal(); stopQRScanner(); alert("Kupon berhasil dipindai!"); },
+           (err) => { }
+         ).catch(err => { alert("Kamera tidak dapat diakses untuk Scan QR."); stopQRScanner(); });
       }
     }
     
     function stopQRScanner() {
-      const reader = document.getElementById('qr-reader');
-      const btn = document.getElementById('btnScanQR');
+      const reader = document.getElementById('qr-reader'); const btn = document.getElementById('btnScanQR');
       if(html5QrCode && html5QrCode.isScanning) {
-         html5QrCode.stop().then(() => {
-           reader.style.display = 'none';
-           btn.innerText = "📷 Scan QR";
-           btn.style.background = "#EBEBEB";
-           btn.style.color = "var(--text-color)";
-         }).catch(err => console.error(err));
-      } else {
-         reader.style.display = 'none';
-         btn.innerText = "📷 Scan QR";
-         btn.style.background = "#EBEBEB";
-         btn.style.color = "var(--text-color)";
-      }
+         html5QrCode.stop().then(() => { reader.style.display = 'none'; btn.innerText = "📷 Scan QR"; btn.style.background = "#EBEBEB"; btn.style.color = "var(--text-color)"; });
+      } else { reader.style.display = 'none'; btn.innerText = "📷 Scan QR"; btn.style.background = "#EBEBEB"; btn.style.color = "var(--text-color)"; }
     }
 
     function batalkanSesi() {
@@ -639,7 +598,6 @@
       namaUser = document.getElementById('inputNama').value.trim(); 
       kuponUser = document.getElementById('inputKupon').value.trim();
       
-      // Jika jalur VIP, wajib isi nama & kupon. Jika reguler, cukup nama saja (kupon dikosongkan)
       if (isVipGuest) {
         if(namaUser === "" || kuponUser === "") { 
           const btn = document.getElementById('btnLogin'); const oldText = btn.innerText;
@@ -652,11 +610,10 @@
           btn.innerText = "⚠️ Nama Wajib Diisi!"; btn.style.backgroundColor = "#D9534F"; btn.style.color = "white";
           setTimeout(() => { btn.innerText = oldText; btn.style.backgroundColor = ""; }, 3000); return; 
         }
-        kuponUser = "UMUM"; // Penanda untuk server
+        kuponUser = "UMUM"; 
       }
       
-      stopQRScanner(); // Hentikan kamera QR jika masih menyala
-      gantiHalaman('page1b'); 
+      stopQRScanner(); gantiHalaman('page1b'); 
     }
 
     function setupFrameTemplate() {
@@ -907,11 +864,19 @@
       if(!confirm("Yakin ingin menyimpan momen ini dan melanjutkan ke halaman berikutnya?")) return;
 
       const btnSave = document.getElementById('btnSimpanDrive'); btnSave.disabled = true; btnSave.innerText = "Menyimpan... Mohon Tunggu";
+      
+      // OPTIMISASI PERFORMA: Jika tidak ada audio, langsung lanjut halaman tanpa upload ke backend
+      if (!audioBase64) {
+         btnSave.disabled = false; btnSave.innerText = "Simpan & Lanjutkan ➔";
+         siapkanHalamanPrint();
+         return;
+      }
+
       document.getElementById('loadingSave').style.display = 'block';
       const pesanTeks = document.getElementById('inputPesan').value.trim();
       
-      // Payload kini mencatat apakah ini jalur VIP (Cetak) atau Reguler (Feeds Only)
-      const payload = { nama: namaUser, kupon: kuponUser, isVip: isVipGuest, photos: arrayFoto, audio: audioBase64, pesan: pesanTeks };
+      // HANYA MENGIRIM AUDIO SAJA (Menghapus 'photos: arrayFoto' untuk mempercepat upload)
+      const payload = { nama: namaUser, kupon: kuponUser, audio: audioBase64, pesan: pesanTeks };
       
       fetch(API_URL, {
         method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ action: "saveCaptureData", payload: payload })
@@ -1053,15 +1018,15 @@
     }
 
     function konfirmasiCetak() {
-      // Pesan konfirmasi dibedakan
       const pesanKonfirm = isVipGuest ? "Bagikan memori ini dan Cetak fotonya?" : "Bagikan memori ini ke galeri utama?";
       if(confirm(pesanKonfirm)) {
         const btnPrint = document.getElementById('btnKonfirmasiCetak'); btnPrint.disabled = true; btnPrint.innerText = "Memproses...";
         document.getElementById('loadingPrint').style.display = 'block';
-        const finalImage = document.getElementById('canvasFrame').toDataURL('image/jpeg', 0.9);
+        
+        // KOMPRESI 0.75 AGAR UPLOAD LEBIH CEPAT!
+        const finalImage = document.getElementById('canvasFrame').toDataURL('image/jpeg', 0.75);
         const pesanTeks = document.getElementById('inputPesan').value.trim(); 
         
-        // Mengirimkan isVip ke Backend
         const payload = { image: finalImage, kupon: kuponUser, isVip: isVipGuest, nama: namaUser, audioUrl: savedAudioUrl, pesan: pesanTeks };
         
         fetch(API_URL, {
