@@ -7,6 +7,9 @@
   
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&family=Playfair+Display:ital,wght@0,600;0,700;1,600&display=swap" rel="stylesheet">
   
+  <!-- PUSTAKA SCANNER QR CODE -->
+  <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
+
   <style>
     :root {
       --bg-color: #FAF9F6;       
@@ -123,38 +126,24 @@
 
     .btn-play { background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.4); backdrop-filter: blur(5px); border-radius: 50%; width: 28px; height: 28px; display: flex; justify-content: center; align-items: center; cursor: pointer; color: white; font-size: 12px; flex-shrink: 0; box-shadow: none; z-index: 5;}
     
-    /* LIGHTBOX UNTUK FEEDS LIVE - PERBAIKAN TATA LETAK AGAR TIDAK TERPOTONG */
     #feedModal {
       display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
       background: rgba(0,0,0,0.7); z-index: 9999; justify-content: center; align-items: center; 
       flex-direction: column; padding: 20px; box-sizing: border-box; backdrop-filter: blur(8px);
       opacity: 0; transition: opacity 0.3s ease;
-      /* touch-action: none; Dihilangkan agar teks yang panjang bisa di scroll */
     }
     #feedModal.show { opacity: 1; }
     
-    /* Foto lebih kecil sedikit di popup feed agar menyisakan ruang untuk tombol dan teks */
-    #modalImg {
-      max-width: 100%; max-height: 45vh; border-radius: 6px; border: 3px solid white; 
-      box-shadow: 0 10px 30px rgba(0,0,0,0.5); object-fit: contain; flex-shrink: 0;
-    }
-
-    /* Scrollbar rapi untuk teks panjang di modal */
-    #modalMessage {
-      color: rgba(255, 255, 255, 0.9); font-size: 13px; font-style: italic; text-align: center; 
-      max-width: 90%; margin-top: 0; margin-bottom: 20px; line-height: 1.5; 
-      max-height: 120px; overflow-y: auto; padding: 0 10px; flex-shrink: 1;
-    }
+    #modalImg { max-width: 100%; max-height: 45vh; border-radius: 6px; border: 3px solid white; box-shadow: 0 10px 30px rgba(0,0,0,0.5); object-fit: contain; flex-shrink: 0; }
+    #modalMessage { color: rgba(255, 255, 255, 0.9); font-size: 13px; font-style: italic; text-align: center; max-width: 90%; margin-top: 0; margin-bottom: 20px; line-height: 1.5; max-height: 120px; overflow-y: auto; padding: 0 10px; flex-shrink: 1; }
     #modalMessage::-webkit-scrollbar { width: 4px; }
     #modalMessage::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.3); border-radius: 10px; }
     
-    /* POPUP PREVIEW FOTO KETIKA DIAMBIL OLEH TAMU (SLIDER) */
     #previewModal {
       display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
       background: rgba(0,0,0,0.7); z-index: 9999; justify-content: center; align-items: center; 
       flex-direction: column; padding: 20px; box-sizing: border-box; backdrop-filter: blur(8px);
-      opacity: 0; transition: opacity 0.3s ease;
-      touch-action: none; /* MENGUNCI SCROLL LAYAR DI HP */
+      opacity: 0; transition: opacity 0.3s ease; touch-action: none; 
     }
     
     .nav-btn {
@@ -165,6 +154,11 @@
     .nav-btn:active { background: rgba(255,255,255,0.4); transform: translateY(-50%) scale(0.9); }
     #prevBtn { left: -15px; }
     #nextBtn { right: -15px; }
+    
+    /* GAYA UNTUK QR SCANNER BOX */
+    #qr-reader { border: none !important; border-radius: 8px; overflow: hidden; }
+    #qr-reader__scan_region { background: var(--bg-color); }
+    #qr-reader__dashboard_section_csr button { background-color: var(--primary-color); color: white; border: none; padding: 8px 15px; border-radius: 5px; cursor: pointer; font-family: 'Montserrat', sans-serif;}
   </style>
 </head>
 <body onload="initApp()">
@@ -189,7 +183,7 @@
       <p style="margin: 5px 0 15px 0; font-size: 11px; color: #666; font-style: italic;">Share & Listen to Our Memories</p>
       
       <div style="display: flex; justify-content: center; gap: 10px; width: 100%; margin: 0 auto;">
-        <button onclick="gantiHalaman('page1')" class="accent" style="flex: 2; margin: 0; font-size: 13px;">📸 Take a Photo</button>
+        <button onclick="gantiHalaman('page_auth_choice')" class="accent" style="flex: 2; margin: 0; font-size: 13px;">📸 Take a Photo</button>
         <button onclick="muatFeeds(true)" style="flex: 1; margin: 0; background: #EBEBEB; color: var(--text-color); box-shadow:none; font-size: 13px;">🔄 Refresh</button>
       </div>
     </div>
@@ -198,21 +192,39 @@
     <div id="feedGrid" class="feed-container"></div>
   </div>
 
-  <!-- HALAMAN 1: LOGIN -->
-  <div id="page1" class="page">
+  <!-- HALAMAN BARU: PEMILIHAN JALUR TAMU (UMUM vs VIP) -->
+  <div id="page_auth_choice" class="page">
     <div style="text-align: left;"><button onclick="gantiHalaman('page0b')" class="btn-back">← Kembali</button></div>
+    <h2 style="font-size: 28px; margin-bottom: 5px;">Pilih Jalur Akses</h2>
+    <p style="font-size: 13px; color: #666; margin-top:0; margin-bottom: 25px;">Pilih sesuai undangan Anda</p>
+
+    <button onclick="setJalur(false)" style="margin-bottom: 15px; padding: 20px; font-size: 15px;">👋 Tamu Reguler<br><span style="font-size: 10px; font-weight: 400;">(Upload ke Live Feeds)</span></button>
+    
+    <button onclick="setJalur(true)" class="accent" style="padding: 20px; font-size: 15px;">🎟️ Tamu VIP (Punya Kupon)<br><span style="font-size: 10px; font-weight: 400;">(Upload ke Feeds & Cetak Foto Kertas)</span></button>
+  </div>
+
+  <!-- HALAMAN 1: LOGIN (Disesuaikan berdasarkan Jalur) -->
+  <div id="page1" class="page">
+    <div style="text-align: left;"><button onclick="kembaliDariLogin()" class="btn-back">← Kembali</button></div>
     <h2 style="font-size: 28px; margin-bottom: 5px;">Virtual Photobooth</h2>
-    <p style="font-size: 13px; color: #666; margin-top:0; margin-bottom: 25px;">Abadikan momen spesial Anda bersama kami</p>
+    <p style="font-size: 13px; color: #666; margin-top:0; margin-bottom: 25px;" id="loginSubtitle">Abadikan momen spesial Anda</p>
     
     <div style="text-align: left; width: 100%;">
-      <label style="font-size: 11px; font-weight: 600; color: var(--primary-color); margin-left: 5px;">Nama Panggilan</label>
+      <label style="font-size: 11px; font-weight: 600; color: var(--primary-color); margin-left: 5px;">Nama / Panggilan</label>
       <input type="text" id="inputNama" placeholder="Cth: Budi & Istri" oninput="saveLokal()">
       
-      <label style="font-size: 11px; font-weight: 600; color: var(--primary-color); margin-left: 5px; margin-top: 10px; display: inline-block;">Nomor Akses / Kupon</label>
-      <input type="text" id="inputKupon" placeholder="Cth: 001" inputmode="numeric" pattern="[0-9]*" oninput="this.value = this.value.replace(/[^0-9]/g, ''); saveLokal()">
+      <!-- BAGIAN KUPON (HANYA MUNCUL JIKA JALUR VIP) -->
+      <div id="vipSection" style="display: none; margin-top: 15px;">
+        <label style="font-size: 11px; font-weight: 600; color: var(--primary-color); margin-left: 5px;">Kode Kupon Cetak Anda</label>
+        <div style="display: flex; gap: 10px; margin-bottom: 5px;">
+          <input type="text" id="inputKupon" placeholder="Ketik manual..." style="flex: 2; margin:0;" oninput="saveLokal()">
+          <button id="btnScanQR" onclick="toggleQRScanner()" style="flex: 1; margin:0; padding: 15px 10px; font-size: 12px; background: #EBEBEB; color: var(--text-color); box-shadow:none;">📷 Scan QR</button>
+        </div>
+        <div id="qr-reader" style="width: 100%; border-radius: 8px; overflow: hidden; margin-top: 5px; display:none; border: 1px solid #E0E0E0;"></div>
+      </div>
     </div>
     
-    <button id="btnLogin" onclick="verifikasiLogin()" style="margin-top: 20px;">Lanjutkan</button>
+    <button id="btnLogin" onclick="verifikasiLogin()" style="margin-top: 25px;">Lanjutkan ➔</button>
   </div>
 
   <!-- HALAMAN 1B: PEMILIHAN TEMPLATE -->
@@ -320,6 +332,7 @@
       <button id="btnDigicam" class="btn-filter" onclick="terapkanFilter('digicam')">Digicam</button>
     </div>
     
+    <!-- TOMBOL CETAK DINAMIS TERGANTUNG JALUR -->
     <button id="btnKonfirmasiCetak" onclick="konfirmasiCetak()" class="accent" style="margin-top: 25px;">Bagikan Memori Ini ✨</button>
     <div id="loadingPrint" class="loading" style="animation: none;">Finalisasi...</div>
   </div>
@@ -331,7 +344,7 @@
     
     <div style="margin-top: 40px;">
       <p style="font-size: 11px; font-weight: 600; color: var(--primary-color); margin-bottom: 10px;">UNDUH FOTO LENGKAP ANDA DISINI</p>
-      <button onclick="window.open('https://drive.google.com/drive/folders/1RuDX-Poq7DcUK6_JQV9Bzga5xDD2FOwR?usp=sharing', '_blank')" class="accent">📂 Buka Galeri Google Drive</button>
+      <button onclick="window.open('MASUKKAN_LINK_FOLDER_ALL_PHOTOS_DISINI', '_blank')" class="accent">📂 Buka Galeri Google Drive</button>
     </div>
     <button onclick="window.location.reload()" style="background: transparent; color: var(--text-color); border: 1px solid #CCC; box-shadow: none; margin-top: 20px; font-size: 13px;">Kembali ke Halaman Utama</button>
   </div>
@@ -374,9 +387,13 @@
     let filterSaatIni = "normal"; let savedAudioUrl = ""; 
     let videoStream = null; let facingMode = "user"; let selectedTemplate = "polaroid";
     let currentPreviewIndex = -1;
+    let isVipGuest = false; // Penanda Jalur Akses VIP
     
     let mediaRecorder, audioChunks = [], timeoutRekaman;
     let imgObj = new Image(), imgObj2 = new Image();
+    
+    // Objek Scanner QR HTML5
+    let html5QrCode;
     
     function drawRoundedRect(ctx, x, y, w, h, r) {
       ctx.beginPath(); ctx.moveTo(x + r, y); ctx.lineTo(x + w - r, y); ctx.quadraticCurveTo(x + w, y, x + w, y + r);
@@ -400,7 +417,7 @@
         namaUser: document.getElementById('inputNama').value.trim(), kuponUser: document.getElementById('inputKupon').value.trim(),
         pesanUser: document.getElementById('inputPesan').value.trim(), arrayFoto: arrayFoto, audioBase64: audioBase64,
         savedAudioUrl: savedAudioUrl, fotoTerpilih: fotoTerpilih, fotoTerpilihGrid: fotoTerpilihGrid,
-        filterSaatIni: filterSaatIni, currentPage: pageActive, selectedTemplate: selectedTemplate
+        filterSaatIni: filterSaatIni, currentPage: pageActive, selectedTemplate: selectedTemplate, isVipGuest: isVipGuest
       };
       try { localStorage.setItem('photoboothState', JSON.stringify(state)); } catch(e) {}
     }
@@ -417,10 +434,20 @@
             arrayFoto = state.arrayFoto || []; audioBase64 = state.audioBase64 || null; savedAudioUrl = state.savedAudioUrl || "";
             fotoTerpilih = state.fotoTerpilih || null; fotoTerpilihGrid = state.fotoTerpilihGrid || [];
             filterSaatIni = state.filterSaatIni || "normal"; selectedTemplate = state.selectedTemplate || "polaroid";
+            isVipGuest = state.isVipGuest || false;
             
             document.getElementById('inputNama').value = namaUser;
             document.getElementById('inputKupon').value = kuponUser; document.getElementById('inputPesan').value = pesanUser;
             
+            // Atur UI berdasar status VIP
+            if(isVipGuest) {
+              document.getElementById('vipSection').style.display = 'block';
+              document.getElementById('btnKonfirmasiCetak').innerText = "Bagikan & Cetak Foto ✨";
+            } else {
+              document.getElementById('vipSection').style.display = 'none';
+              document.getElementById('btnKonfirmasiCetak').innerText = "Bagikan ke Live Feeds ✨";
+            }
+
             setupFrameTemplate();
             gantiHalaman(state.currentPage);
             
@@ -438,6 +465,75 @@
         } catch (e) {}
       }
       if (!isResuming) { muatFeeds(); }
+    }
+
+    function setJalur(isVip) {
+      isVipGuest = isVip;
+      if(isVip) {
+        document.getElementById('vipSection').style.display = 'block';
+        document.getElementById('loginSubtitle').innerText = "Masukkan nama & pindai kupon cetak Anda";
+        document.getElementById('btnKonfirmasiCetak').innerText = "Bagikan & Cetak Foto ✨";
+      } else {
+        document.getElementById('vipSection').style.display = 'none';
+        document.getElementById('loginSubtitle').innerText = "Abadikan momen spesial Anda";
+        document.getElementById('btnKonfirmasiCetak').innerText = "Bagikan ke Live Feeds ✨";
+      }
+      gantiHalaman('page1');
+    }
+    
+    function kembaliDariLogin() {
+      stopQRScanner();
+      gantiHalaman('page_auth_choice');
+    }
+
+    // LOGIKA SCANNER QR
+    function toggleQRScanner() {
+      const reader = document.getElementById('qr-reader');
+      const btn = document.getElementById('btnScanQR');
+      
+      if(reader.style.display === 'block') {
+         stopQRScanner();
+      } else {
+         reader.style.display = 'block';
+         btn.innerText = "Tutup Kamera";
+         btn.style.background = "#D9534F";
+         btn.style.color = "white";
+         
+         if(!html5QrCode) html5QrCode = new Html5Qrcode("qr-reader");
+         
+         html5QrCode.start(
+           { facingMode: "environment" },
+           { fps: 10, qrbox: { width: 200, height: 200 } },
+           (decodedText, decodedResult) => {
+             // Berhasil Scan
+             document.getElementById('inputKupon').value = decodedText;
+             saveLokal(); stopQRScanner();
+             alert("Kupon berhasil dipindai!");
+           },
+           (errorMessage) => { /* Abaikan error per frame */ }
+         ).catch(err => {
+           alert("Kamera tidak dapat diakses untuk Scan QR. Pastikan izin kamera diberikan.");
+           stopQRScanner();
+         });
+      }
+    }
+    
+    function stopQRScanner() {
+      const reader = document.getElementById('qr-reader');
+      const btn = document.getElementById('btnScanQR');
+      if(html5QrCode && html5QrCode.isScanning) {
+         html5QrCode.stop().then(() => {
+           reader.style.display = 'none';
+           btn.innerText = "📷 Scan QR";
+           btn.style.background = "#EBEBEB";
+           btn.style.color = "var(--text-color)";
+         }).catch(err => console.error(err));
+      } else {
+         reader.style.display = 'none';
+         btn.innerText = "📷 Scan QR";
+         btn.style.background = "#EBEBEB";
+         btn.style.color = "var(--text-color)";
+      }
     }
 
     function batalkanSesi() {
@@ -540,12 +636,26 @@
     }
 
     function verifikasiLogin() {
-      namaUser = document.getElementById('inputNama').value.trim(); kuponUser = document.getElementById('inputKupon').value.trim();
-      if(namaUser === "" || kuponUser === "") { 
-        const btn = document.getElementById('btnLogin'); const oldText = btn.innerText;
-        btn.innerText = "⚠️ Lengkapi Data Anda!"; btn.style.backgroundColor = "#D9534F"; btn.style.color = "white";
-        setTimeout(() => { btn.innerText = oldText; btn.style.backgroundColor = ""; }, 3000); return; 
+      namaUser = document.getElementById('inputNama').value.trim(); 
+      kuponUser = document.getElementById('inputKupon').value.trim();
+      
+      // Jika jalur VIP, wajib isi nama & kupon. Jika reguler, cukup nama saja (kupon dikosongkan)
+      if (isVipGuest) {
+        if(namaUser === "" || kuponUser === "") { 
+          const btn = document.getElementById('btnLogin'); const oldText = btn.innerText;
+          btn.innerText = "⚠️ Nama & Kupon Wajib Diisi!"; btn.style.backgroundColor = "#D9534F"; btn.style.color = "white";
+          setTimeout(() => { btn.innerText = oldText; btn.style.backgroundColor = ""; }, 3000); return; 
+        }
+      } else {
+        if(namaUser === "") { 
+          const btn = document.getElementById('btnLogin'); const oldText = btn.innerText;
+          btn.innerText = "⚠️ Nama Wajib Diisi!"; btn.style.backgroundColor = "#D9534F"; btn.style.color = "white";
+          setTimeout(() => { btn.innerText = oldText; btn.style.backgroundColor = ""; }, 3000); return; 
+        }
+        kuponUser = "UMUM"; // Penanda untuk server
       }
+      
+      stopQRScanner(); // Hentikan kamera QR jika masih menyala
       gantiHalaman('page1b'); 
     }
 
@@ -799,7 +909,9 @@
       const btnSave = document.getElementById('btnSimpanDrive'); btnSave.disabled = true; btnSave.innerText = "Menyimpan... Mohon Tunggu";
       document.getElementById('loadingSave').style.display = 'block';
       const pesanTeks = document.getElementById('inputPesan').value.trim();
-      const payload = { nama: namaUser, kupon: kuponUser, photos: arrayFoto, audio: audioBase64, pesan: pesanTeks };
+      
+      // Payload kini mencatat apakah ini jalur VIP (Cetak) atau Reguler (Feeds Only)
+      const payload = { nama: namaUser, kupon: kuponUser, isVip: isVipGuest, photos: arrayFoto, audio: audioBase64, pesan: pesanTeks };
       
       fetch(API_URL, {
         method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ action: "saveCaptureData", payload: payload })
@@ -925,11 +1037,9 @@
       
       if(selectedTemplate === 'polaroid') {
          drawFilteredImage(ctx, imgObj, 60, 60, 780, 900, 18);
-         // NAMA DIHILANGKAN DARI SINI
       } else {
          drawFilteredImage(ctx, imgObj, 60, 60, 780, 420, 24);
          drawFilteredImage(ctx, imgObj2, 60, 510, 780, 420, 24);
-         // NAMA DIHILANGKAN DARI SINI
       }
     }
 
@@ -943,13 +1053,16 @@
     }
 
     function konfirmasiCetak() {
-      const yakin = confirm("Bagikan memori ini ke galeri utama?");
-      if(yakin) {
+      // Pesan konfirmasi dibedakan
+      const pesanKonfirm = isVipGuest ? "Bagikan memori ini dan Cetak fotonya?" : "Bagikan memori ini ke galeri utama?";
+      if(confirm(pesanKonfirm)) {
         const btnPrint = document.getElementById('btnKonfirmasiCetak'); btnPrint.disabled = true; btnPrint.innerText = "Memproses...";
         document.getElementById('loadingPrint').style.display = 'block';
         const finalImage = document.getElementById('canvasFrame').toDataURL('image/jpeg', 0.9);
         const pesanTeks = document.getElementById('inputPesan').value.trim(); 
-        const payload = { image: finalImage, kupon: kuponUser, nama: namaUser, audioUrl: savedAudioUrl, pesan: pesanTeks };
+        
+        // Mengirimkan isVip ke Backend
+        const payload = { image: finalImage, kupon: kuponUser, isVip: isVipGuest, nama: namaUser, audioUrl: savedAudioUrl, pesan: pesanTeks };
         
         fetch(API_URL, {
           method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ action: "savePrintedPhoto", payload: payload })
@@ -957,17 +1070,18 @@
         .then(data => {
           if(data.status === "success") {
             document.getElementById('loadingPrint').style.display = 'none'; 
-            document.getElementById('btnKonfirmasiCetak').disabled = false; document.getElementById('btnKonfirmasiCetak').innerText = "Bagikan Memori Ini ✨";
+            document.getElementById('btnKonfirmasiCetak').disabled = false; 
             
             gantiHalaman('page5'); 
             clearLokal(); localStorage.removeItem('photoboothGalleryCache');
-            namaUser = ""; kuponUser = ""; arrayFoto = []; audioBase64 = null; savedAudioUrl = ""; fotoTerpilih = null; fotoTerpilihGrid = []; filterSaatIni = "normal"; selectedTemplate = "polaroid";
+            namaUser = ""; kuponUser = ""; arrayFoto = []; audioBase64 = null; savedAudioUrl = ""; fotoTerpilih = null; fotoTerpilihGrid = []; filterSaatIni = "normal"; selectedTemplate = "polaroid"; isVipGuest = false;
             document.getElementById('inputNama').value = ""; document.getElementById('inputKupon').value = ""; document.getElementById('inputPesan').value = "";
           } else { throw new Error(data.message); }
         }).catch(error => {
           alert("Gagal memproses pengiriman: " + error.message);
           document.getElementById('loadingPrint').style.display = 'none'; 
-          document.getElementById('btnKonfirmasiCetak').disabled = false; document.getElementById('btnKonfirmasiCetak').innerText = "Bagikan Memori Ini ✨";
+          document.getElementById('btnKonfirmasiCetak').disabled = false; 
+          document.getElementById('btnKonfirmasiCetak').innerText = isVipGuest ? "Bagikan & Cetak Foto ✨" : "Bagikan ke Live Feeds ✨";
         });
       }
     }
