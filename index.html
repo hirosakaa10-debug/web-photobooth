@@ -118,7 +118,6 @@
     <div style="position: sticky; top: 0; background: rgba(250, 249, 246, 0.95); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); z-index: 10; padding: 15px 0 10px 0; border-bottom: 1px solid rgba(0,0,0,0.05); margin-bottom: 15px;">
       <h2 style="margin: 0; font-size: 26px;">Live Feeds</h2>
       <p style="margin: 5px 0 15px 0; font-size: 11px; color: #666; font-style: italic;">Share & Listen to Our Memories</p>
-      
       <div style="display: flex; justify-content: center; gap: 10px; width: 100%; margin: 0 auto;">
         <button onclick="gantiHalaman('page_auth_choice')" class="accent" style="flex: 2; margin: 0; font-size: 13px;">📸 Take a Photo</button>
         <button onclick="muatFeeds(true)" style="flex: 1; margin: 0; background: #EBEBEB; color: var(--text-color); box-shadow:none; font-size: 13px;">🔄 Refresh</button>
@@ -205,9 +204,11 @@
     </div>
 
     <div id="previewArea" class="photo-grid"></div>
+    
     <hr style="border: 0; height: 1px; background: rgba(0,0,0,0.08); margin: 5px 0 20px 0; width: 100%;">
 
     <h3 style="font-size: 18px; margin-bottom: 10px;">Berikan Ucapan Spesial <span style="font-family: 'Montserrat', sans-serif; font-size: 11px; font-weight: 500; color: #888;">(Opsional)</span></h3>
+    
     <div style="width: 100%; margin: 0 auto;">
       <div class="tab-nav">
         <button class="tab-btn active" onclick="bukaTab(event, 'tab-teks')">✍️ Tulis Pesan</button>
@@ -221,11 +222,13 @@
       <div id="tab-suara" class="tab-pane">
         <p style="font-size: 11px; margin-top: 0; margin-bottom: 15px; color: #666;">Ucapkan doa terbaik Anda secara langsung (Maks. 30 detik)</p>
         <button id="btnRekam" onclick="toggleRekam()" style="margin: 0; background-color: var(--text-color);">🎙️ Mulai Merekam</button>
+        
         <div id="areaFallback" style="display: none; margin-top: 10px;">
           <div class="iphone-warning">Ketuk tombol di bawah. Abaikan layar kamera jika terbuka.</div>
           <label for="audioNatif" class="btn-native" style="background-color: var(--text-color);">🎙️ Buka Perekam iPhone</label>
           <input type="file" id="audioNatif" accept="audio/*" capture="microphone" onchange="prosesAudioNatif(event)">
         </div>
+
         <div id="audioContainer" style="display: none; align-items: center; flex-direction: column; margin-top: 15px;">
           <audio id="audioPlayback" controls style="width:100%; outline: none;"></audio>
           <button class="btn-delete-audio" id="btnHapusAudio" onclick="hapusAudio()">🗑️ Hapus Suara</button>
@@ -234,8 +237,8 @@
     </div>
     <hr style="border: 0; height: 1px; background: transparent; margin: 10px 0; width: 100%;">
     
-    <!-- PERUBAHAN: Tombol kembali Instan (Tidak upload apa-apa di halaman ini) -->
-    <button id="btnSimpanDrive" onclick="simpanKeDrive()">Lanjutkan ➔</button>
+    <!-- Tidak melakukan API Call, langsung ganti halaman untuk memilih foto -->
+    <button id="btnSimpanDrive" onclick="lanjutPilihFoto()">Lanjutkan ➔</button>
   </div>
 
   <!-- HALAMAN 3: PILIH FOTO -->
@@ -273,7 +276,8 @@
     
     <div style="margin-top: 40px;">
       <p style="font-size: 11px; font-weight: 600; color: var(--primary-color); margin-bottom: 10px;">UNDUH FOTO LENGKAP ANDA DISINI</p>
-      <button onclick="window.open('https://drive.google.com/drive/folders/1RuDX-Poq7DcUK6_JQV9Bzga5xDD2FOwR?usp=sharing', '_blank')" class="accent">📂 Buka Galeri Google Drive</button>
+      <!-- Tombol ini akan otomatis memuat URL Google Drive khusus tamu tersebut -->
+      <button id="btnBukaGaleriTamu" onclick="bukaGaleriPribadi()" class="accent">📂 Buka Galeri Google Drive</button>
     </div>
     <button onclick="window.location.reload()" style="background: transparent; color: var(--text-color); border: 1px solid #CCC; box-shadow: none; margin-top: 20px; font-size: 13px;">Kembali ke Halaman Utama</button>
   </div>
@@ -315,6 +319,7 @@
     let videoStream = null; let facingMode = "user"; let selectedTemplate = "polaroid";
     let currentPreviewIndex = -1;
     let isVipGuest = false; 
+    let urlGaleriTamu = ""; // Menyimpan URL folder Google Drive spesifik tamu
     
     let mediaRecorder, audioChunks = [], timeoutRekaman;
     let imgObj = new Image(), imgObj2 = new Image();
@@ -406,8 +411,7 @@
     }
     
     function kembaliDariLogin() {
-      stopQRScanner();
-      gantiHalaman('page_auth_choice');
+      stopQRScanner(); gantiHalaman('page_auth_choice');
     }
 
     function toggleQRScanner() {
@@ -448,36 +452,70 @@
       document.getElementById(idTujuan).classList.add('active'); window.scrollTo(0,0); saveLokal(); 
     }
 
-    // =====================================================================
-    // PEMUTAR AUDIO HTML5 YANG 100% BEKERJA (DI IPHONE/ANDROID/PC)
-    // =====================================================================
-    let currentAudio = null; 
-    let currentBtnAudio = null;
+    // =========================================================================
+    // FUNGSI PEMUTAR AUDIO HTML5 UNTUK LIVE FEEDS
+    // =========================================================================
+    let audioCtx = null; 
+    let currentAudioSource = null; 
+    let currentPlayingBtn = null;
+
+    function initAudioContext() { 
+      if (!audioCtx) { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); } 
+      if (audioCtx.state === 'suspended') { audioCtx.resume(); } 
+    }
 
     function mainkanAudioFeed(audioBase64, btnElement) {
-      // Jika audio ini sedang main, kita pause
-      if (currentAudio && currentBtnAudio === btnElement && !currentAudio.paused) { 
-          currentAudio.pause(); 
-          btnElement.innerHTML = '🔊'; 
-          return; 
+      initAudioContext();
+      
+      // Toggle Play/Pause
+      if (currentPlayingBtn === btnElement && currentAudioSource) { 
+        currentAudioSource.stop(); currentAudioSource = null; btnElement.innerHTML = '▶'; currentPlayingBtn = null; return; 
       }
-      // Jika ada audio lain main, kita matikan
-      if (currentAudio && !currentAudio.paused) { 
-          currentAudio.pause(); 
-          if(currentBtnAudio) currentBtnAudio.innerHTML = '🔊'; 
+      
+      // Pause yang sedang berjalan jika ada
+      if (currentAudioSource) { 
+        currentAudioSource.stop(); if (currentPlayingBtn) currentPlayingBtn.innerHTML = '▶'; currentAudioSource = null; 
       }
       
       btnElement.innerHTML = '⏳'; 
-      currentBtnAudio = btnElement;
+      currentPlayingBtn = btnElement;
       
-      currentAudio = new Audio(audioBase64);
-      currentAudio.play().then(() => {
+      try {
+        let base64Data = audioBase64;
+        if (base64Data.indexOf(',') !== -1) { base64Data = base64Data.split(',')[1]; }
+        
+        const binaryString = window.atob(base64Data);
+        const len = binaryString.length;
+        const bytes = new Uint8Array(len);
+        for (let i = 0; i < len; i++) {
+          bytes[i] = binaryString.charCodeAt(i);
+        }
+        
+        audioCtx.decodeAudioData(bytes.buffer.slice(0), function(buffer) {
+          const source = audioCtx.createBufferSource();
+          source.buffer = buffer;
+          source.connect(audioCtx.destination);
+          source.start(0);
+          
+          currentAudioSource = source;
           btnElement.innerHTML = '⏸';
-      }).catch(err => {
-          console.error(err); alert("Browser menolak memutar suara otomatis. Klik sekali lagi."); btnElement.innerHTML = '🔊'; 
-      });
-      
-      currentAudio.onended = () => { btnElement.innerHTML = '🔊'; currentAudio = null; currentBtnAudio = null; };
+          
+          source.onended = () => {
+            btnElement.innerHTML = '▶';
+            if (currentPlayingBtn === btnElement) {
+              currentAudioSource = null;
+              currentPlayingBtn = null;
+            }
+          };
+        }, function(e) {
+          console.error(e);
+          alert("Gagal mendekode atau memutar suara ini.");
+          btnElement.innerHTML = '▶';
+        });
+      } catch (err) {
+        console.error(err);
+        btnElement.innerHTML = '▶';
+      }
     }
 
     function bukaModal(imgSrc, name, message, audioUrl) {
@@ -496,7 +534,7 @@
     function tutupModal() {
       document.body.style.overflow = ''; 
       const modal = document.getElementById('feedModal'); modal.classList.remove('show');
-      if (currentAudio) { currentAudio.pause(); currentAudio = null; }
+      if (currentAudioSource) { currentAudioSource.stop(); currentAudioSource = null; }
       setTimeout(() => { modal.style.display = 'none'; document.getElementById('modalImg').src = ""; }, 300);
     }
 
@@ -545,9 +583,7 @@
     }
 
     function verifikasiLogin() {
-      namaUser = document.getElementById('inputNama').value.trim(); 
-      kuponUser = document.getElementById('inputKupon').value.trim();
-      
+      namaUser = document.getElementById('inputNama').value.trim(); kuponUser = document.getElementById('inputKupon').value.trim();
       const btn = document.getElementById('btnLogin');
       const oldText = btn.innerText;
 
@@ -620,6 +656,14 @@
       if(arrayFoto.length >= 5) return; 
       const video = document.getElementById('videoFeed'); if (!video.videoWidth) return; 
       
+      try {
+        initAudioContext(); const osc = audioCtx.createOscillator(); const gain = audioCtx.createGain();
+        osc.connect(gain); gain.connect(audioCtx.destination); osc.type = 'square'; osc.frequency.setValueAtTime(800, audioCtx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(40, audioCtx.currentTime + 0.1);
+        gain.gain.setValueAtTime(0.5, audioCtx.currentTime); gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.1);
+        osc.start(audioCtx.currentTime); osc.stop(audioCtx.currentTime + 0.1);
+      } catch(e) {}
+      
       const flash = document.getElementById('flashEffect'); flash.classList.add('flash-active');
       setTimeout(() => flash.classList.remove('flash-active'), 50);
       video.pause();
@@ -644,15 +688,22 @@
 
     function bukaPreview(index) {
       document.body.style.overflow = 'hidden'; 
-      currentPreviewIndex = index; updatePreviewContent();
+      currentPreviewIndex = index;
+      updatePreviewContent();
+      
       document.getElementById('btnHapusPreview').onclick = function() { hapusDariPreview(); };
       const modal = document.getElementById('previewModal');
-      modal.style.display = 'flex'; setTimeout(() => { modal.style.opacity = '1'; }, 10);
+      modal.style.display = 'flex';
+      setTimeout(() => { modal.style.opacity = '1'; }, 10);
     }
     
     function updatePreviewContent() {
-      const img = document.getElementById('previewModalImg'); img.src = arrayFoto[currentPreviewIndex];
-      const prevBtn = document.getElementById('prevBtn'); const nextBtn = document.getElementById('nextBtn');
+      const img = document.getElementById('previewModalImg');
+      img.src = arrayFoto[currentPreviewIndex];
+      
+      const prevBtn = document.getElementById('prevBtn');
+      const nextBtn = document.getElementById('nextBtn');
+      
       if(currentPreviewIndex === 0) prevBtn.style.display = 'none'; else prevBtn.style.display = 'flex';
       if(currentPreviewIndex === arrayFoto.length - 1) nextBtn.style.display = 'none'; else nextBtn.style.display = 'flex';
     }
@@ -660,32 +711,52 @@
     function geserPreview(arah) {
       const newIndex = currentPreviewIndex + arah;
       if (newIndex >= 0 && newIndex < arrayFoto.length) {
-        currentPreviewIndex = newIndex; const img = document.getElementById('previewModalImg');
-        img.style.transform = 'scale(0.95)'; img.style.opacity = '0.5';
-        setTimeout(() => { updatePreviewContent(); img.style.transform = 'scale(1)'; img.style.opacity = '1'; }, 150);
+        currentPreviewIndex = newIndex;
+        const img = document.getElementById('previewModalImg');
+        img.style.transform = 'scale(0.95)';
+        img.style.opacity = '0.5';
+        setTimeout(() => {
+          updatePreviewContent();
+          img.style.transform = 'scale(1)';
+          img.style.opacity = '1';
+        }, 150);
       }
     }
     
-    let touchStartX = 0; let touchEndX = 0; const swipeArea = document.getElementById('previewModal');
+    let touchStartX = 0; let touchEndX = 0;
+    const swipeArea = document.getElementById('previewModal');
+    
     swipeArea.addEventListener('touchstart', e => { touchStartX = e.changedTouches[0].screenX; }, {passive: true});
     swipeArea.addEventListener('touchend', e => { 
-      touchEndX = e.changedTouches[0].screenX; const threshold = 50; 
+      touchEndX = e.changedTouches[0].screenX; 
+      const threshold = 50; 
       if (touchEndX < touchStartX - threshold) { geserPreview(1); } 
       if (touchEndX > touchStartX + threshold) { geserPreview(-1); } 
     }, {passive: true});
 
     function tutupPreview() {
       document.body.style.overflow = ''; 
-      const modal = document.getElementById('previewModal'); modal.style.opacity = '0';
+      const modal = document.getElementById('previewModal');
+      modal.style.opacity = '0';
       setTimeout(() => { modal.style.display = 'none'; document.getElementById('previewModalImg').src = ""; }, 300);
     }
 
     function hapusDariPreview() {
       if (currentPreviewIndex !== -1) {
-        const src = arrayFoto[currentPreviewIndex]; arrayFoto.splice(currentPreviewIndex, 1);
-        const idxGrid = fotoTerpilihGrid.indexOf(src); if(idxGrid !== -1) fotoTerpilihGrid.splice(idxGrid, 1);
-        if(fotoTerpilih === src) fotoTerpilih = null; renderPreview(); saveLokal();
-        if(arrayFoto.length === 0) { tutupPreview(); } else { if (currentPreviewIndex >= arrayFoto.length) { currentPreviewIndex = arrayFoto.length - 1; } updatePreviewContent(); }
+        const src = arrayFoto[currentPreviewIndex];
+        arrayFoto.splice(currentPreviewIndex, 1);
+        const idxGrid = fotoTerpilihGrid.indexOf(src);
+        if(idxGrid !== -1) fotoTerpilihGrid.splice(idxGrid, 1);
+        if(fotoTerpilih === src) fotoTerpilih = null;
+        
+        renderPreview(); saveLokal();
+        
+        if(arrayFoto.length === 0) {
+          tutupPreview();
+        } else {
+          if (currentPreviewIndex >= arrayFoto.length) { currentPreviewIndex = arrayFoto.length - 1; }
+          updatePreviewContent();
+        }
       }
     }
 
@@ -702,13 +773,17 @@
         
         imgEl.style.width = (selectedTemplate === 'polaroid') ? "65px" : "90px";
         imgEl.style.height = (selectedTemplate === 'polaroid') ? "85px" : "50px";
+        
         imgEl.onclick = function() { bukaPreview(index); }; 
 
         const btnDelete = document.createElement('button'); btnDelete.className = 'btn-delete'; btnDelete.innerHTML = '✕';
         btnDelete.onclick = function(e) {
-          e.stopPropagation(); arrayFoto.splice(index, 1); 
-          const idxGrid = fotoTerpilihGrid.indexOf(src); if(idxGrid !== -1) fotoTerpilihGrid.splice(idxGrid, 1);
-          if(fotoTerpilih === src) fotoTerpilih = null; renderPreview(); saveLokal();
+          e.stopPropagation(); 
+          arrayFoto.splice(index, 1); 
+          const idxGrid = fotoTerpilihGrid.indexOf(src);
+          if(idxGrid !== -1) fotoTerpilihGrid.splice(idxGrid, 1);
+          if(fotoTerpilih === src) fotoTerpilih = null;
+          renderPreview(); saveLokal();
         };
         wrapper.appendChild(imgEl); wrapper.appendChild(btnDelete); previewArea.appendChild(wrapper);
       });
@@ -772,17 +847,18 @@
       document.getElementById('btnRekam').innerText = "🎙️ Mulai Merekam"; document.getElementById('btnRekam').style.backgroundColor = "var(--text-color)"; saveLokal();
     }
 
-    // PERBAIKAN: Tombol "Lanjutkan" Instan, tidak upload apapun ke server
-    function simpanKeDrive() {
+    function lanjutPilihFoto() {
       if(selectedTemplate === 'polaroid' && arrayFoto.length === 0) { 
         const btn = document.getElementById('btnSimpanDrive'); const oldText = btn.innerText;
-        btn.innerText = "⚠️ Wajib ambil foto terlebih dahulu!"; btn.style.backgroundColor = "#D9534F"; setTimeout(() => { btn.innerText = oldText; btn.style.backgroundColor = ""; }, 3000); return; 
+        btn.innerText = "⚠️ Wajib ambil foto terlebih dahulu!"; btn.style.backgroundColor = "#D9534F";
+        setTimeout(() => { btn.innerText = oldText; btn.style.backgroundColor = ""; }, 3000); return; 
       }
       if(selectedTemplate === 'grid2' && arrayFoto.length < 2) { 
         const btn = document.getElementById('btnSimpanDrive'); const oldText = btn.innerText;
-        btn.innerText = "⚠️ Ambil minimal 2 foto untuk Grid!"; btn.style.backgroundColor = "#D9534F"; setTimeout(() => { btn.innerText = oldText; btn.style.backgroundColor = ""; }, 3000); return; 
+        btn.innerText = "⚠️ Ambil minimal 2 foto untuk Grid!"; btn.style.backgroundColor = "#D9534F";
+        setTimeout(() => { btn.innerText = oldText; btn.style.backgroundColor = ""; }, 3000); return; 
       }
-      siapkanHalamanPrint();
+      siapkanHalamanPrint(); 
     }
 
     function siapkanHalamanPrintLokal() {
@@ -837,7 +913,7 @@
       gantiHalaman('page4'); terapkanFilter('normal'); inisialisasiEditFoto(); 
     }
     
-    function kembaliPilihFoto() { filterSaatIni = "normal"; siapkanHalamanPrint(); }
+    function kembaliEditSebelumnya() { gantiHalaman('page3'); }
 
     function inisialisasiEditFoto() {
       if(selectedTemplate === 'polaroid') {
@@ -908,25 +984,18 @@
       gambarDiCanvas(); saveLokal();
     }
 
-    // PERBAIKAN: Fungsi Cetak mengirim 5 Foto Mentah, Foto Final, dan Audio
     function konfirmasiCetak() {
       const pesanKonfirm = isVipGuest ? "Bagikan memori ini dan Cetak fotonya?" : "Bagikan memori ini ke galeri utama?";
       if(confirm(pesanKonfirm)) {
         const btnPrint = document.getElementById('btnKonfirmasiCetak'); btnPrint.disabled = true; btnPrint.innerText = "Memproses...";
         document.getElementById('loadingPrint').style.display = 'block';
         
+        // KOMPRESI FOTO FINAL KE 0.8
         const finalImage = document.getElementById('canvasFrame').toDataURL('image/jpeg', 0.8);
         const pesanTeks = document.getElementById('inputPesan').value.trim(); 
         
-        const payload = { 
-           image: finalImage, 
-           kupon: kuponUser, 
-           isVip: isVipGuest, 
-           nama: namaUser, 
-           audio: audioBase64, 
-           pesan: pesanTeks,
-           photos: arrayFoto // KIRIM 5 FOTO MENTAH
-        };
+        // MENGIRIM KESELURUHAN DATA (TERMASUK 5 FOTO MENTAH & AUDIO)
+        const payload = { image: finalImage, kupon: kuponUser, isVip: isVipGuest, nama: namaUser, audio: audioBase64, pesan: pesanTeks, photos: arrayFoto };
         
         fetch(API_URL, {
           method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ action: "savePrintedPhoto", payload: payload })
@@ -935,6 +1004,11 @@
           if(data.status === "success") {
             document.getElementById('loadingPrint').style.display = 'none'; 
             document.getElementById('btnKonfirmasiCetak').disabled = false; 
+            
+            // TANGKAP URL FOLDER PRIVAT TAMU DARI SERVER
+            if (data.data && data.data.guestFolderUrl) {
+                urlGaleriTamu = data.data.guestFolderUrl;
+            }
             
             gantiHalaman('page5'); 
             clearLokal(); localStorage.removeItem('photoboothGalleryCache');
@@ -948,6 +1022,15 @@
           document.getElementById('btnKonfirmasiCetak').innerText = isVipGuest ? "Bagikan & Cetak Foto ✨" : "Bagikan ke Live Feeds ✨";
         });
       }
+    }
+    
+    // FUNGSI UNTUK MEMBUKA FOLDER PRIVAT TAMU
+    function bukaGaleriPribadi() {
+       if(urlGaleriTamu) {
+           window.open(urlGaleriTamu, '_blank');
+       } else {
+           alert("Mohon maaf, tautan galeri Anda belum tersedia. Silakan cek Live Feeds.");
+       }
     }
   </script>
 </body>
