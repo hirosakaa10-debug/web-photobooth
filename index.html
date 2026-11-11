@@ -128,11 +128,12 @@
     <div id="feedGrid" class="feed-container"></div>
   </div>
 
-  <!-- HALAMAN JALUR TAMU -->
+  <!-- HALAMAN BARU: PEMILIHAN JALUR TAMU -->
   <div id="page_auth_choice" class="page">
     <div style="text-align: left;"><button onclick="gantiHalaman('page0b')" class="btn-back">← Kembali</button></div>
     <h2 style="font-size: 28px; margin-bottom: 5px;">Pilih Jalur Akses</h2>
     <p style="font-size: 13px; color: #666; margin-top:0; margin-bottom: 25px;">Pilih sesuai undangan Anda</p>
+
     <button onclick="setJalur(false)" style="margin-bottom: 15px; padding: 20px; font-size: 15px;">👋 Tamu Reguler<br><span style="font-size: 10px; font-weight: 400;">(Upload ke Live Feeds)</span></button>
     <button onclick="setJalur(true)" class="accent" style="padding: 20px; font-size: 15px;">🎟️ Tamu VIP (Punya Kupon)<br><span style="font-size: 10px; font-weight: 400;">(Upload ke Feeds & Cetak Foto)</span></button>
   </div>
@@ -205,9 +206,11 @@
     </div>
 
     <div id="previewArea" class="photo-grid"></div>
+    
     <hr style="border: 0; height: 1px; background: rgba(0,0,0,0.08); margin: 5px 0 20px 0; width: 100%;">
 
     <h3 style="font-size: 18px; margin-bottom: 10px;">Berikan Ucapan Spesial <span style="font-family: 'Montserrat', sans-serif; font-size: 11px; font-weight: 500; color: #888;">(Opsional)</span></h3>
+    
     <div style="width: 100%; margin: 0 auto;">
       <div class="tab-nav">
         <button class="tab-btn active" onclick="bukaTab(event, 'tab-teks')">✍️ Tulis Pesan</button>
@@ -221,11 +224,13 @@
       <div id="tab-suara" class="tab-pane">
         <p style="font-size: 11px; margin-top: 0; margin-bottom: 15px; color: #666;">Ucapkan doa terbaik Anda secara langsung (Maks. 30 detik)</p>
         <button id="btnRekam" onclick="toggleRekam()" style="margin: 0; background-color: var(--text-color);">🎙️ Mulai Merekam</button>
+        
         <div id="areaFallback" style="display: none; margin-top: 10px;">
           <div class="iphone-warning">Ketuk tombol di bawah. Abaikan layar kamera jika terbuka.</div>
           <label for="audioNatif" class="btn-native" style="background-color: var(--text-color);">🎙️ Buka Perekam iPhone</label>
           <input type="file" id="audioNatif" accept="audio/*" capture="microphone" onchange="prosesAudioNatif(event)">
         </div>
+
         <div id="audioContainer" style="display: none; align-items: center; flex-direction: column; margin-top: 15px;">
           <audio id="audioPlayback" controls style="width:100%; outline: none;"></audio>
           <button class="btn-delete-audio" id="btnHapusAudio" onclick="hapusAudio()">🗑️ Hapus Suara</button>
@@ -248,6 +253,7 @@
   <!-- HALAMAN 4: ADJUST & FILTER -->
   <div id="page4" class="page">
     <div style="text-align: left;"><button onclick="kembaliEditSebelumnya()" class="btn-back">← Kembali</button></div>
+    
     <h3 style="font-size: 24px; margin-top: 0;">Sentuhan Akhir</h3>
     <p style="font-size: 12px; margin-top: -10px; color: #666; margin-bottom: 20px;">Pilih nuansa warna favorit Anda</p>
     
@@ -267,6 +273,7 @@
   <div id="page5" class="page" style="padding: 40px 10px;">
     <h1 style="font-size: 36px; margin-bottom: 10px;">Terima Kasih!</h1>
     <p style="font-size: 14px; color: #666; line-height: 1.6;">Kehadiran dan doa Anda adalah hadiah terindah bagi kami.</p>
+    
     <div style="margin-top: 40px;">
       <p style="font-size: 11px; font-weight: 600; color: var(--primary-color); margin-bottom: 10px;">UNDUH FOTO LENGKAP ANDA DISINI</p>
       <button id="btnBukaGaleriTamu" onclick="bukaGaleriPribadi()" class="accent">📂 Buka Galeri Google Drive</button>
@@ -277,20 +284,24 @@
   <!-- LIGHTBOX UNTUK FEEDS LIVE -->
   <div id="feedModal">
     <button onclick="tutupModal()" style="position:absolute; top:20px; right:20px; background:none; color:white; border:none; font-size:40px; box-shadow:none; width:auto; padding:0; cursor:pointer; line-height:1; z-index:1001;">&times;</button>
+    
     <img id="modalImg" src="">
     <h3 id="modalName" style="color:white; margin-top:20px; margin-bottom:10px; font-size:24px;"></h3>
     <p id="modalMessage"></p>
+    
     <button id="modalAudioBtn" style="display:none; background:var(--accent-color); color:white; border-radius:30px; padding:12px 30px; width:auto; font-size:14px; box-shadow:0 4px 15px rgba(197, 168, 128, 0.4);"><span id="modalAudioIcon">▶</span> Dengarkan Pesan Suara</button>
   </div>
 
-  <!-- POPUP PREVIEW FOTO KETIKA DIAMBIL OLEH TAMU (SLIDER & SWIPE FIXED) -->
+  <!-- POPUP PREVIEW FOTO KETIKA DIAMBIL OLEH TAMU -->
   <div id="previewModal">
     <button onclick="tutupPreview()" style="position:absolute; top:20px; right:20px; background:none; color:white; border:none; font-size:40px; box-shadow:none; width:auto; padding:0; cursor:pointer; line-height:1; z-index:1001;">&times;</button>
+    
     <div style="position: relative; width: 100%; max-width: 340px; display: flex; justify-content: center; align-items: center; margin-bottom: 25px;">
       <button id="prevBtn" class="nav-btn" onclick="geserPreview(-1)">❮</button>
       <img id="previewModalImg" src="" style="max-width:100%; max-height:60vh; border-radius:8px; border:2px solid white; box-shadow:0 10px 30px rgba(0,0,0,0.5); object-fit:contain; transition: transform 0.2s ease, opacity 0.2s ease;">
       <button id="nextBtn" class="nav-btn" onclick="geserPreview(1)">❯</button>
     </div>
+    
     <div style="display: flex; gap: 15px; width: 100%; max-width: 300px;">
       <button onclick="tutupPreview()" style="flex:1; background: white; color: var(--text-color); margin:0;">OK</button>
       <button id="btnHapusPreview" style="flex:1; background: #D9534F; color: white; margin:0;">Hapus</button>
@@ -298,6 +309,7 @@
   </div>
 
   <script>
+    // --- GANTI URL DI BAWAH INI DENGAN API URL DARI GOOGLE APPS SCRIPT ANDA ---
     const API_URL = "https://script.google.com/macros/s/AKfycbyNGrNS679PsiQ5r6KZJAvpsOrVQNQ7sZUNth5u6OzXnq7W6CsNJTuBdA0PbPvkEo8F/exec";
 
     let namaUser = "", kuponUser = "", arrayFoto = [], audioBase64 = null;
@@ -422,16 +434,9 @@
     }
     
     function kembaliEditSebelumnya() { gantiHalaman('page3'); }
-
     function gantiHalaman(idTujuan) { document.querySelectorAll('.page').forEach(p => p.classList.remove('active')); document.getElementById(idTujuan).classList.add('active'); window.scrollTo(0,0); saveLokal(); }
 
-    // =====================================================================
-    // PERBAIKAN: PEMUTAR AUDIO ASYNCHRONOUS (ANTI-FREEZE UI/TOMBOL X)
-    // =====================================================================
-    let audioCtx = null; 
-    let currentAudioSource = null; 
-    let currentPlayingBtn = null;
-
+    let audioCtx = null; let currentAudioSource = null; let currentPlayingBtn = null;
     function initAudioContext() { 
       if (!audioCtx) { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); } 
       if (audioCtx.state === 'suspended') { audioCtx.resume(); } 
@@ -439,66 +444,28 @@
 
     function mainkanAudioFeed(base64Data, btnElement) {
       initAudioContext(); 
+      if (currentPlayingBtn === btnElement && currentAudioSource) { currentAudioSource.stop(); currentAudioSource = null; btnElement.innerHTML = '▶'; currentPlayingBtn = null; return; }
+      if (currentAudioSource) { currentAudioSource.stop(); currentAudioSource = null; }
+      if (currentPlayingBtn) { currentPlayingBtn.innerHTML = '▶'; }
       
-      // Jika audio ini sedang main, kita pause/stop
-      if (currentPlayingBtn === btnElement && currentAudioSource) { 
-        currentAudioSource.stop(); 
-        currentAudioSource = null; 
-        btnElement.innerHTML = '▶'; 
-        currentPlayingBtn = null; 
-        return; 
-      }
-      
-      // Jika ada audio lain yang sedang dimainkan/diload, matikan
-      if (currentAudioSource) { 
-        currentAudioSource.stop(); 
-        currentAudioSource = null; 
-      }
-      if (currentPlayingBtn) { 
-        currentPlayingBtn.innerHTML = '▶'; 
-      }
-      
-      btnElement.innerHTML = '⏳'; 
-      currentPlayingBtn = btnElement;
+      btnElement.innerHTML = '⏳'; currentPlayingBtn = btnElement;
       
       try {
-        // Menggunakan fetch untuk parse Data URI (Base64) secara asinkron (Bypass masalah UI Nge-freeze)
         fetch(base64Data)
           .then(res => res.arrayBuffer())
           .then(arrayBuffer => audioCtx.decodeAudioData(arrayBuffer))
           .then(audioBuffer => {
-            // Cek apakah user keburu menekan tombol X (close) saat proses loading berlangsung
             if (currentPlayingBtn !== btnElement) return; 
-
             const source = audioCtx.createBufferSource(); 
             source.buffer = audioBuffer; 
             source.connect(audioCtx.destination); 
             source.start(0); 
-            
             currentAudioSource = source; 
             btnElement.innerHTML = '⏸';
-            
-            source.onended = () => { 
-              btnElement.innerHTML = '▶'; 
-              if (currentPlayingBtn === btnElement) { 
-                currentAudioSource = null; 
-                currentPlayingBtn = null; 
-              } 
-            };
+            source.onended = () => { btnElement.innerHTML = '▶'; if (currentPlayingBtn === btnElement) { currentAudioSource = null; currentPlayingBtn = null; } };
           })
-          .catch(err => { 
-            console.error(err); 
-            if(currentPlayingBtn === btnElement) {
-              alert("Gagal memutar suara."); 
-              btnElement.innerHTML = '▶'; 
-              currentPlayingBtn = null;
-            }
-          });
-      } catch (err) { 
-        console.error(err); 
-        btnElement.innerHTML = '▶'; 
-        currentPlayingBtn = null;
-      }
+          .catch(err => { console.error(err); if(currentPlayingBtn === btnElement) { alert("Gagal memutar suara."); btnElement.innerHTML = '▶'; currentPlayingBtn = null; }});
+      } catch (err) { console.error(err); btnElement.innerHTML = '▶'; currentPlayingBtn = null; }
     }
 
     function bukaModal(imgSrc, name, message, audioUrl) {
@@ -517,11 +484,8 @@
     function tutupModal() {
       document.body.style.overflow = ''; 
       const modal = document.getElementById('feedModal'); modal.classList.remove('show');
-      
-      // Matikan audio & batalkan loading
       if (currentAudioSource) { currentAudioSource.stop(); currentAudioSource = null; }
       if (currentPlayingBtn) { currentPlayingBtn.innerHTML = '▶'; currentPlayingBtn = null; } 
-      
       setTimeout(() => { modal.style.display = 'none'; document.getElementById('modalImg').src = ""; }, 300);
     }
 
@@ -543,7 +507,6 @@
             textContainer.appendChild(msgObj);
           }
           overlay.appendChild(textContainer);
-          
           if(item.audioUrl) {
             const btnAudio = document.createElement('div'); btnAudio.className = 'btn-play'; btnAudio.innerHTML = '🔊';
             overlay.appendChild(btnAudio);
@@ -844,6 +807,44 @@
       }
     }
 
+    // FUNGSI KONVERSI WARNA HSL TO RGB & RGB TO HSL UNTUK COLOR GRADING
+    function rgbToHsl(r, g, b) {
+      r /= 255, g /= 255, b /= 255;
+      let max = Math.max(r, g, b), min = Math.min(r, g, b);
+      let h, s, l = (max + min) / 2;
+      if (max === min) { h = s = 0; } 
+      else {
+        let d = max - min;
+        s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+        switch (max) {
+          case r: h = (g - b) / d + (g < b ? 6 : 0); break;
+          case g: h = (b - r) / d + 2; break;
+          case b: h = (r - g) / d + 4; break;
+        } h /= 6;
+      }
+      return [h * 360, s * 100, l * 100];
+    }
+
+    function hslToRgb(h, s, l) {
+      h /= 360; s /= 100; l /= 100;
+      let r, g, b;
+      if (s === 0) { r = g = b = l; } 
+      else {
+        const hue2rgb = (p, q, t) => {
+          if (t < 0) t += 1; if (t > 1) t -= 1;
+          if (t < 1 / 6) return p + (q - p) * 6 * t;
+          if (t < 1 / 2) return q;
+          if (t < 2 / 3) return p + (q - p) * (2 / 3 - t) * 6;
+          return p;
+        };
+        let q = l < 0.5 ? l * (1 + s) : l + s - l * s;
+        let p = 2 * l - q;
+        r = hue2rgb(p, q, h + 1 / 3); g = hue2rgb(p, q, h); b = hue2rgb(p, q, h - 1 / 3);
+      }
+      return [r * 255, g * 255, b * 255];
+    }
+
+    // PENERAPAN FILTER POLAROID SPESIFIK BERDASARKAN PARAMETER LIGHTROOM
     function drawFilteredImage(ctx, img, x, y, w, h, radius) {
       const offCanvas = document.createElement('canvas'); offCanvas.width = w; offCanvas.height = h; const offCtx = offCanvas.getContext('2d');
       offCtx.drawImage(img, 0, 0, w, h);
@@ -852,12 +853,44 @@
         const imgData = offCtx.getImageData(0, 0, w, h); const data = imgData.data; const cx = w / 2; const cy = h / 2; const maxDist = Math.sqrt(cx*cx + cy*cy);
         for (let i = 0; i < data.length; i += 4) {
           let r = data[i], g = data[i + 1], b = data[i + 2];
+          
           if (filterSaatIni === 'polaroid') {
-             let contrast = 0.76; r = contrast * (r - 128) + 128; g = contrast * (g - 128) + 128; b = contrast * (b - 128) + 128;
-             r += 10; b -= 15; r += 5; b += 5; let luma = 0.299 * r + 0.587 * g + 0.114 * b; let sat = 0.77; 
-             r = luma + sat * (r - luma); g = luma + sat * (g - luma); b = luma + sat * (b - luma);
+             // 1. LIGHT (Exposure +0.2, Contrast -10, Highlights -20, Shadows +15, Whites -10, Blacks +15)
+             r *= 1.05; g *= 1.05; b *= 1.05; // Exposure
+             let contrast = 0.9; r = contrast * (r - 128) + 128; g = contrast * (g - 128) + 128; b = contrast * (b - 128) + 128; // Contrast
+             
+             let lumaVal = 0.299*r + 0.587*g + 0.114*b;
+             if(lumaVal > 180) { r *= 0.9; g *= 0.9; b *= 0.9; } // Highlights & Whites turun
+             if(lumaVal < 80) { r += 15; g += 15; b += 15; } // Shadows & Blacks naik
+
+             // 2. TONE CURVE S-Curve (Black Point ditarik ke 15)
+             r = Math.max(15, r); g = Math.max(15, g); b = Math.max(15, b); 
+             
+             // 3. COLOR (Temp +12, Tint +4, Vibrance -10, Saturation -5)
+             r += 12; b -= 12; // Temp Warm
+             r += 4; b += 4; // Tint Magenta
+             let hsl = rgbToHsl(r, g, b);
+             hsl[1] = Math.max(0, hsl[1] - 5); // Saturation umum -5
+             
+             // 4. COLOR MIXER (Red, Orange, Blue)
+             if(hsl[0] >= 340 || hsl[0] <= 20) { hsl[0] = (hsl[0] + 5) % 360; hsl[1] = Math.max(0, hsl[1] - 5); hsl[2] = Math.min(100, hsl[2] + 10); } // Red
+             if(hsl[0] > 20 && hsl[0] <= 45) { hsl[1] = Math.max(0, hsl[1] - 10); hsl[2] = Math.min(100, hsl[2] + 15); } // Orange (Skin Tone)
+             if(hsl[0] >= 200 && hsl[0] <= 260) { hsl[0] = Math.max(0, hsl[0] - 10); hsl[1] = Math.max(0, hsl[1] - 30); hsl[2] = Math.max(0, hsl[2] - 10); } // Blue
+             
+             // 5. COLOR GRADING (Shadows Hue 35/Sat 5, Midtones Hue 45/Sat 10)
+             if(hsl[2] < 40) { // Shadows
+                 let gradRgb = hslToRgb(35, 5, hsl[2]); r = r*0.8 + gradRgb[0]*0.2; g = g*0.8 + gradRgb[1]*0.2; b = b*0.8 + gradRgb[2]*0.2;
+             } else if(hsl[2] >= 40 && hsl[2] < 80) { // Midtones
+                 let gradRgb = hslToRgb(45, 10, hsl[2]); r = r*0.8 + gradRgb[0]*0.2; g = g*0.8 + gradRgb[1]*0.2; b = b*0.8 + gradRgb[2]*0.2;
+             } else {
+                 let finalRgb = hslToRgb(hsl[0], hsl[1], hsl[2]); r = finalRgb[0]; g = finalRgb[1]; b = finalRgb[2];
+             }
+
+             // 6. EFFECTS & DETAILS (Clarity -10, Vignette -5, Grain 25)
              let px = (i / 4) % w; let py = Math.floor((i / 4) / w); let dist = Math.sqrt((px - cx)*(px - cx) + (py - cy)*(py - cy)); 
-             let vignette = 1.0 - (dist / maxDist) * 0.15; r *= vignette; g *= vignette; b *= vignette; let noise = (Math.random() - 0.5) * 44; r += noise; g += noise; b += noise;
+             let vignette = 1.0 - (dist / maxDist) * 0.1; r *= vignette; g *= vignette; b *= vignette; // Vignette
+             let noise = (Math.random() - 0.5) * 25; r += noise; g += noise; b += noise; // Grain
+             
           } else if (filterSaatIni === 'digicam') {
             let contrast = 1.25; r = ((r / 255 - 0.5) * contrast + 0.5) * 255; g = ((g / 255 - 0.5) * contrast + 0.5) * 255; b = ((b / 255 - 0.5) * contrast + 0.5) * 255;
             let luma = 0.299 * r + 0.587 * g + 0.114 * b; let sat = 1.3; r = luma + sat * (r - luma); g = luma + sat * (g - luma); b = luma + sat * (b - luma); b += 15; g += 5;
